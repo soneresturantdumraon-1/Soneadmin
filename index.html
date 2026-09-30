@@ -3,63 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Orders Dashboard - Sone Restaurant</title>
+    <title>Sone Restro - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial; background: #e0f7fa; padding: 20px; margin: 0; }
-        .header { background: #004d40; color: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-        .order-card { background: white; padding: 20px; margin-top: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 6px solid #d32f2f; }
-        .order-card h3 { margin: 0 0 10px 0; color: #d32f2f; }
-        .order-card p { font-size: 16px; margin: 5px 0; line-height: 1.5; }
-        .call-btn { background: #1976d2; color: white; text-decoration: none; padding: 10px 20px; border-radius: 25px; display: inline-block; margin-top: 10px; font-weight: bold; }
+        body { font-family: 'Poppins', sans-serif; background: #eef2f3; margin: 0; padding: 20px; }
+        .header { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { font-size: 22px; color: #111; margin: 0; }
+        .header span { background: #4caf50; color: white; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+        
+        .order-card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 6px solid #ff9800; }
+        .order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        .order-header h3 { margin: 0; color: #d32f2f; }
+        .order-body p { margin: 5px 0; font-size: 15px; color: #444; }
+        .call-btn { background: #1976d2; color: white; text-decoration: none; padding: 8px 15px; border-radius: 8px; display: inline-flex; align-items: center; margin-top: 10px; font-weight: 600; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Admin Panel - Live Orders</h1>
-        <p>Aapke orders yahan automatically aayenge (Auto-refresh har 10 sec)</p>
+        <h1>Live Orders</h1>
+        <span>Auto Sync ON</span>
     </div>
 
     <div id="orders-container">
-        <p style="text-align:center; margin-top: 20px; font-size: 18px;">Loading orders...</p>
+        <p style="text-align:center; color: #888;">Fetching latest orders...</p>
     </div>
 
     <script>
-        // Supabase Connection
         const SUPABASE_URL = 'https://gvsimqxwfuugugssvcus.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2c2ltcXh3ZnV1Z3Vnc3N2Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NTcwOTUsImV4cCI6MjEwNjMzMzA5NX0.b1aIHuURJ4jqy7T9ulzzD9e5O7fjTcuer0_QhPlZTKk';
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function fetchOrders() {
-            // Database se sabse naye orders pehle nikalna (descending order)
-            let { data: orders, error } = await supabase
-                .from('orders')
-                .select('*')
-                .order('id', { ascending: false });
+            let { data: orders, error } = await supabase.from('orders').select('*').order('id', { ascending: false });
 
             if (error) { console.error(error); return; }
 
             let html = '';
-            if(orders.length === 0) html = '<p style="text-align:center; margin-top:20px;">No orders yet.</p>';
+            if(orders.length === 0) html = '<p style="text-align:center;">No orders yet.</p>';
             
             orders.forEach(order => {
-                // Time format karna
                 const timeStr = new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
                 
                 html += `<div class="order-card">
-                            <h3>Order #${order.id} - ₹${order.total_amount} <span style="font-size:12px; color:gray; float:right;">${timeStr}</span></h3>
-                            <p><b>Customer:</b> ${order.customer_name}</p>
-                            <p><b>Items:</b> ${order.items}</p>
-                            <p><b>UTR No:</b> <span style="background:#fff3cd; padding:2px 5px; border-radius:3px;">${order.utr_id}</span></p>
-                            <a href="tel:${order.phone}" class="call-btn">📞 Call ${order.phone}</a>
+                            <div class="order-header">
+                                <h3>Order #${order.id}</h3>
+                                <strong>₹${order.total_amount}</strong>
+                            </div>
+                            <div class="order-body">
+                                <p>👤 <b>Customer:</b> ${order.customer_name}</p>
+                                <p>🛒 <b>Items:</b> ${order.items}</p>
+                                <p>🧾 <b>UTR:</b> <span style="background:#fff3cd; padding:2px 6px; border-radius:4px;">${order.utr_id}</span></p>
+                                <p>🕒 <b>Time:</b> ${timeStr}</p>
+                                <a href="tel:${order.phone}" class="call-btn">📞 Call ${order.phone}</a>
+                            </div>
                          </div>`;
             });
             document.getElementById('orders-container').innerHTML = html;
         }
 
-        // Har 10 second me check karega naye order ke liye
-        setInterval(fetchOrders, 10000);
+        setInterval(fetchOrders, 10000); // 10 sec auto-refresh
         fetchOrders();
     </script>
 </body>
