@@ -3,31 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sone Restro - Admin Panel</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Sone Restro - Live Orders</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Poppins', sans-serif; background: #eef2f3; margin: 0; padding: 20px; }
-        .header { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .header h1 { font-size: 22px; color: #111; margin: 0; }
-        .header span { background: #4caf50; color: white; padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
+        .topbar { background: #1e293b; padding: 15px 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid #334155; }
+        .topbar h1 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+        .pulse { width: 12px; height: 12px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 10px #22c55e; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
         
-        .order-card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 6px solid #ff9800; }
-        .order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-        .order-header h3 { margin: 0; color: #d32f2f; }
-        .order-body p { margin: 5px 0; font-size: 15px; color: #444; }
-        .call-btn { background: #1976d2; color: white; text-decoration: none; padding: 8px 15px; border-radius: 8px; display: inline-flex; align-items: center; margin-top: 10px; font-weight: 600; font-size: 14px; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .order-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; border-left: 4px solid #ef4444; }
+        .order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 12px; }
+        .order-id { font-size: 18px; font-weight: 700; }
+        .order-amount { font-size: 18px; font-weight: 700; color: #22c55e; background: rgba(34, 197, 94, 0.1); padding: 4px 10px; border-radius: 8px; }
+        
+        .detail-row { display: flex; margin-bottom: 8px; font-size: 14px; }
+        .detail-label { color: #94a3b8; width: 80px; font-weight: 600; }
+        .detail-value { color: #e2e8f0; font-weight: 500; }
+        .utr-badge { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 6px; letter-spacing: 1px; }
+        
+        .call-btn { background: #ef4444; color: white; text-decoration: none; padding: 10px; border-radius: 8px; text-align: center; font-weight: 600; font-size: 14px; display: block; margin-top: 15px; }
+        .error-msg { background: #7f1d1d; color: #fca5a5; padding: 20px; border-radius: 12px; border: 1px solid #991b1b; grid-column: 1 / -1; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Live Orders</h1>
-        <span>Auto Sync ON</span>
+    <div class="topbar">
+        <h1><div class="pulse"></div> Live Orders Panel</h1>
+        <div style="color: #94a3b8; font-size: 14px;">Auto Syncing...</div>
     </div>
 
-    <div id="orders-container">
-        <p style="text-align:center; color: #888;">Fetching latest orders...</p>
+    <div id="orders-container" class="grid-container">
+        <div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px;">Fetching Latest Orders...</div>
     </div>
 
     <script>
@@ -36,34 +45,39 @@
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function fetchOrders() {
+            const container = document.getElementById('orders-container');
+            
             let { data: orders, error } = await supabase.from('orders').select('*').order('id', { ascending: false });
 
-            if (error) { console.error(error); return; }
+            if (error) { 
+                container.innerHTML = `<div class="error-msg"><b>Supabase Error:</b> ${error.message} <br><br> Please check if you ran the SQL Query correctly in Supabase.</div>`;
+                return; 
+            }
 
             let html = '';
-            if(orders.length === 0) html = '<p style="text-align:center;">No orders yet.</p>';
-            
-            orders.forEach(order => {
-                const timeStr = new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-                
-                html += `<div class="order-card">
+            if(orders.length === 0) {
+                html = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px;">No incoming orders right now.</div>';
+            } else {
+                orders.forEach(order => {
+                    const timeStr = new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                    html += `
+                        <div class="order-card">
                             <div class="order-header">
-                                <h3>Order #${order.id}</h3>
-                                <strong>₹${order.total_amount}</strong>
+                                <div class="order-id">#${order.id}</div>
+                                <div class="order-amount">₹${order.total_amount}</div>
                             </div>
-                            <div class="order-body">
-                                <p>👤 <b>Customer:</b> ${order.customer_name}</p>
-                                <p>🛒 <b>Items:</b> ${order.items}</p>
-                                <p>🧾 <b>UTR:</b> <span style="background:#fff3cd; padding:2px 6px; border-radius:4px;">${order.utr_id}</span></p>
-                                <p>🕒 <b>Time:</b> ${timeStr}</p>
-                                <a href="tel:${order.phone}" class="call-btn">📞 Call ${order.phone}</a>
-                            </div>
-                         </div>`;
-            });
-            document.getElementById('orders-container').innerHTML = html;
+                            <div class="detail-row"><div class="detail-label">Time</div><div class="detail-value">${timeStr}</div></div>
+                            <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value">${order.customer_name}</div></div>
+                            <div class="detail-row"><div class="detail-label">Items</div><div class="detail-value" style="color:#cbd5e1;">${order.items}</div></div>
+                            <div class="detail-row"><div class="detail-label">UTR</div><div class="detail-value"><span class="utr-badge">${order.utr_id}</span></div></div>
+                            <a href="tel:${order.phone}" class="call-btn">📞 Call Customer</a>
+                        </div>`;
+                });
+            }
+            container.innerHTML = html;
         }
 
-        setInterval(fetchOrders, 10000); // 10 sec auto-refresh
+        setInterval(fetchOrders, 8000); // 8-second refresh
         fetchOrders();
     </script>
 </body>
