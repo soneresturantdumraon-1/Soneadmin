@@ -1,59 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Sone Restro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sone Admin - Live Orders</title>
+    
+    <link rel="icon" type="image/png" href="sonelogo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
-        body { background: #f1f5f9; display: flex; height: 100vh; overflow: hidden; }
+        :root {
+            --ios-bg: #F2F2F7; --ios-card: #FFFFFF; --ios-text: #1C1C1E; --ios-text-muted: #8E8E93;
+            --ios-orange: #FF9500; --ios-orange-grad: linear-gradient(135deg, #FF9500 0%, #FF5E3A 100%);
+            --ios-green: #34C759; --ios-red: #FF3B30; --ios-blue: #007AFF;
+            --ios-input-bg: rgba(118, 118, 128, 0.12); --ios-separator: rgba(60, 60, 67, 0.1);
+            --radius-card: 16px; --radius-btn: 12px;
+        }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background-color: var(--ios-bg); color: var(--ios-text); overflow-x: hidden;}
         
         /* LOGIN SCREEN */
-        #login-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
-        .login-box { background: white; padding: 40px 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .login-logo { width: 160px; margin-bottom: 20px; }
-        .login-box input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 15px; outline: none; }
-        .login-box input:focus { border-color: #d32f2f; }
-        .login-btn { width: 100%; background: #d32f2f; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
-        .login-btn:active { background: #b91c1c; }
+        #login-screen { position:fixed; top:0; left:0; width:100vw; height:100vh; background: #f4f5f7; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
+        .login-box { background: #ffffff; padding: 40px 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); width: 100%; max-width: 360px; text-align: center; }
+        .login-logo { width: 140px; height: 140px; object-fit: contain; margin: 0 auto 15px auto; display: block; }
+        .login-input { width: 100%; padding: 14px 15px; border: 2px solid #E5E5EA; border-radius: 12px; font-size: 15px; outline: none; margin-bottom: 15px; font-family: 'Poppins', sans-serif;}
+        .login-btn { width: 100%; padding: 15px; background: #1C1C1E; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 16px; }
 
-        /* DASHBOARD */
-        #dashboard { display: none; width: 100%; height: 100%; }
+        /* MAIN APP */
+        #app-container { display: none; flex-direction: column; width: 100%; min-height: 100vh; }
+        .top-header { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--ios-separator); position: sticky; top: 0; z-index: 100; }
         
-        /* SIDEBAR */
-        .sidebar { width: 260px; background: #1e293b; color: white; display: flex; flex-direction: column; padding: 25px 20px; }
-        .sidebar-logo { width: 120px; align-self: center; margin-bottom: 40px; background: white; padding: 10px; border-radius: 12px; }
-        .menu-item { padding: 15px 20px; margin-bottom: 10px; background: transparent; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 15px; transition: 0.2s; }
-        .menu-item:hover { background: #334155; }
-        .menu-item.active { background: #d32f2f; color: white; }
-        .logout-btn { margin-top: auto; background: transparent; border: 2px solid #ef4444; color: #ef4444; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; }
-
-        /* MAIN CONTENT */
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; background: #f8fafc; }
-        .topbar { background: white; padding: 18px 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 25px; }
-        .topbar h2 { color: #0f172a; font-size: 22px; }
-        .sync-badge { background: #10b981; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-        .pulse { width: 8px; height: 8px; background: white; border-radius: 50%; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
-
-        .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .order-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.04); border-left: 6px solid #d32f2f; }
-        .order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px; }
-        .order-header h3 { color: #1e293b; margin:0; font-size: 18px; }
-        .order-header h2 { margin:0; color: #10b981; font-size: 20px; }
+        .sidebar { width: 260px; background-color: #FFFFFF; position: fixed; height: 100%; left: -260px; top: 0; z-index: 1001; transition: 0.3s; overflow-y:auto; box-shadow: 2px 0 10px rgba(0,0,0,0.1);}
+        .sidebar.show { left: 0; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; display: none; }
+        .overlay.show { display: block; }
         
-        .detail { margin-bottom: 8px; font-size: 14px; color: #64748b; display: flex; justify-content: space-between; }
-        .detail strong { color: #334155; }
-        .item-list { background: #f1f5f9; padding: 10px; border-radius: 8px; color: #d32f2f; font-weight: 600; font-size: 14px; margin: 10px 0; }
-        .utr-box { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; padding: 4px 10px; border-radius: 6px; font-family: monospace; font-weight: bold; }
-        
-        .call-btn { display: block; background: #3b82f6; color: white; text-decoration: none; padding: 12px; border-radius: 10px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 14px; transition: 0.2s; }
-        .call-btn:active { background: #2563eb; }
+        .nav-links { list-style: none; padding: 15px 10px; margin: 0; }
+        .nav-links a { display: flex; align-items: center; padding: 12px 15px; color: var(--ios-text); text-decoration: none; font-weight: 500; font-size: 15px; border-radius: var(--radius-btn); cursor: pointer; margin-bottom: 5px;}
+        .nav-links a.active { background: var(--ios-orange-grad); color: #fff; }
 
-        @media (max-width: 768px) {
-            .sidebar { display: none; } /* Hide sidebar on mobile to show full orders */
+        .tab-panel { display: none; padding: 20px; }
+        .tab-panel.active { display: block; }
+        
+        /* Dashboard Layout */
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .sync-badge { background: #E8F5E9; color: #2E7D32; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #C8E6C9;}
+        
+        /* Order Cards Grid */
+        .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .order-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--ios-orange); display: flex; flex-direction: column;}
+        .order-card.completed { border-left-color: var(--ios-green); opacity: 0.8; }
+        
+        .order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .order-id { font-family: 'Montserrat'; font-weight: 800; font-size: 18px; color: #1C1C1E; }
+        .order-time { font-size: 12px; color: #8E8E93; font-weight: 500; }
+        
+        .order-details p { margin: 5px 0; font-size: 14px; }
+        .order-details strong { color: #1C1C1E; }
+        .order-items { background: #F8F9FA; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #D32F2F; margin: 10px 0; }
+        .order-total { font-size: 18px; font-weight: 700; color: var(--ios-green); text-align: right; margin-top: 10px;}
+        
+        .action-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-print { background: var(--ios-blue); color: white; border: none; padding: 10px; border-radius: 8px; flex: 1; font-weight: 600; cursor: pointer; }
+        .btn-done { background: var(--ios-green); color: white; border: none; padding: 10px; border-radius: 8px; flex: 1; font-weight: 600; cursor: pointer; }
+
+        /* Print Style (Hidden normally) */
+        #print-area { display: none; }
+        
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; display: flex; justify-content: center; padding: 20px;}
+            
+            .bill-container {
+                width: 100%; max-width: 80mm; /* Standard thermal printer width */
+                font-family: monospace; color: black; font-size: 12px;
+            }
+            .text-center { text-align: center; }
+            .bold { font-weight: bold; }
+            .border-bottom { border-bottom: 1px dashed black; padding-bottom: 5px; margin-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { text-align: left; padding: 2px 0; }
+            .right { text-align: right; }
         }
     </style>
 </head>
@@ -62,117 +92,258 @@
     <!-- LOGIN SCREEN -->
     <div id="login-screen">
         <div class="login-box">
-            <img src="./sonelogo1_2.png" class="login-logo" alt="Sone Logo" onerror="this.src='./sonelogo_2.png'">
-            <h2 style="margin-bottom: 25px; color:#1e293b;">Admin Login</h2>
-            <input type="text" id="username" placeholder="Username (admin)">
-            <input type="password" id="password" placeholder="Password (12345)">
-            <button class="login-btn" onclick="handleLogin()">LOGIN TO DASHBOARD</button>
-            <p id="error-msg" style="color:#ef4444; margin-top:15px; display:none; font-weight:bold;">Incorrect details!</p>
+            <img src="sonelogo1_3.png" alt="Logo" class="login-logo" onerror="this.src='sonelogo_3.png'">
+            <h2 style="margin: 0 0 20px; font-family: 'Montserrat';">Admin Login</h2>
+            <input type="text" id="login-user" placeholder="Username" class="login-input">
+            <input type="password" id="login-pass" placeholder="Password" class="login-input">
+            <button onclick="loginAdmin()" class="login-btn">LOGIN</button>
+            <p id="login-error" style="color: red; font-size: 13px; margin-top: 10px; display: none;">Invalid details!</p>
         </div>
     </div>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard">
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <img src="./sonelogo_2.png" class="sidebar-logo" alt="Logo">
-            <div class="menu-item active">📋 Live Orders</div>
-            <div class="menu-item">👥 Customers</div>
-            <div class="menu-item">⚙️ Settings</div>
-            <div class="logout-btn" onclick="handleLogout()">LOGOUT</div>
+    <!-- MAIN APP -->
+    <div id="app-container">
+        
+        <!-- Navbar -->
+        <div class="top-header">
+            <button onclick="toggleSidebar()" style="background:transparent; border:none; font-size:22px; cursor:pointer;"><i class="fas fa-bars"></i></button>
+            <div style="font-family:'Montserrat'; font-weight:800; font-size:18px;">SONE ADMIN</div>
+            <div class="sync-badge" id="sync-status">🟢 Online</div>
         </div>
 
-        <!-- MAIN CONTENT -->
-        <div class="main-content">
-            <div class="topbar">
-                <h2>Restaurant Dashboard</h2>
-                <span class="sync-badge"><div class="pulse"></div> Auto Sync</span>
+        <!-- Sidebar -->
+        <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+        <div class="sidebar" id="sidebar">
+            <div style="text-align: center; padding: 20px; border-bottom: 1px solid #eee;">
+                <img src="sonelogo_3.png" alt="Logo" style="width: 100px;">
+                <h3 style="margin: 10px 0 0; font-family: 'Montserrat';">Admin Panel</h3>
             </div>
-            
-            <div id="orders-container" class="order-grid">
-                <p style="grid-column: 1/-1; text-align:center; margin-top:50px; color:#94a3b8; font-size:18px;">Loading orders...</p>
+            <ul class="nav-links">
+                <li><a class="active" onclick="switchTab('ordersTab', this)"><i class="fas fa-concierge-bell" style="width:25px;"></i> Live Orders</a></li>
+                <li><a onclick="switchTab('historyTab', this)"><i class="fas fa-history" style="width:25px;"></i> Order History</a></li>
+                <li><a onclick="logoutAdmin()" style="color: var(--ios-red);"><i class="fas fa-sign-out-alt" style="width:25px;"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Live Orders Tab -->
+        <div id="ordersTab" class="tab-panel active">
+            <div class="dashboard-header">
+                <h2>Live Orders</h2>
+                <button onclick="fetchOrders()" style="background:var(--ios-blue); color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer;"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+            <div id="live-orders-grid" class="order-grid">
+                <p style="text-align:center; grid-column: 1/-1; color: #888;">Fetching orders...</p>
             </div>
         </div>
+
+        <!-- History Tab -->
+        <div id="historyTab" class="tab-panel">
+            <h2>Order History</h2>
+            <div id="history-grid" class="order-grid">
+                 <p style="text-align:center; grid-column: 1/-1; color: #888;">No completed orders yet.</p>
+            </div>
+        </div>
+        
+        <!-- Print Area -->
+        <div id="print-area"></div>
+
     </div>
 
     <script>
+        // Supabase Init
         const SUPABASE_URL = 'https://gvsimqxwfuugugssvcus.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2c2ltcXh3ZnV1Z3Vnc3N2Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NTcwOTUsImV4cCI6MjEwNjMzMzA5NX0.b1aIHuURJ4jqy7T9ulzzD9e5O7fjTcuer0_QhPlZTKk';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2c2ltcXh3ZnV1Z3Vnc3N2Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NTcwOTUsImV4cCI6MjEwNjMzMzA5NX0.b1aIHuURJ4jqy7T9ulzzD9e5O7fjTcuer0_QhPlZTKk';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Session Logic (Local Storage)
+        let allOrders = [];
+
+        // Simple Auth logic
+        function loginAdmin() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            if(user === 'admin' && pass === '12345') {
+                localStorage.setItem('sone_admin', 'true');
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+                initApp();
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('sone_admin');
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+
         window.onload = () => {
-            if (localStorage.getItem('sone_admin_logged_in') === 'true') {
-                showDashboard();
+            if(localStorage.getItem('sone_admin') === 'true') {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+                initApp();
             }
         };
 
-        function handleLogin() {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
-            if (user === 'admin' && pass === '12345') {
-                localStorage.setItem('sone_admin_logged_in', 'true');
-                showDashboard();
-            } else {
-                document.getElementById('error-msg').style.display = 'block';
-            }
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+            document.getElementById('overlay').classList.toggle('show');
         }
 
-        function handleLogout() {
-            localStorage.removeItem('sone_admin_logged_in');
-            document.getElementById('dashboard').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex';
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('error-msg').style.display = 'none';
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            el.classList.add('active');
+            toggleSidebar();
+            renderOrders(); // Refresh views
         }
 
-        let orderInterval;
-        function showDashboard() {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'flex';
+        function initApp() {
             fetchOrders();
-            // Start fetching every 8 seconds
-            if(orderInterval) clearInterval(orderInterval);
-            orderInterval = setInterval(fetchOrders, 8000);
+            // Start Auto Refresh
+            setInterval(fetchOrders, 10000); // Har 10 second me check karega
         }
 
         async function fetchOrders() {
-            let { data: orders, error } = await supabase.from('orders').select('*').order('id', { ascending: false });
+            try {
+                const { data, error } = await supabase
+                    .from('orders')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-            const container = document.getElementById('orders-container');
-            if (error) { 
-                container.innerHTML = `<p style="grid-column: 1/-1; color:red; text-align:center;">Error: ${error.message}</p>`;
-                return; 
+                if (error) throw error;
+                
+                allOrders = data || [];
+                renderOrders();
+                document.getElementById('sync-status').innerHTML = '🟢 Updated';
+                setTimeout(()=> document.getElementById('sync-status').innerHTML = '🟢 Online', 2000);
+            } catch (err) {
+                console.error("Fetch error:", err);
+                document.getElementById('sync-status').innerHTML = '🔴 Error';
             }
+        }
 
-            let html = '';
-            if(orders.length === 0) {
-                html = '<p style="grid-column: 1/-1; text-align:center; color:#94a3b8; font-size:18px;">No live orders right now.</p>';
-            } else {
-                orders.forEach(order => {
-                    const timeStr = new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-                    html += `
-                        <div class="order-card">
-                            <div class="order-header">
-                                <h3>Order #${order.id}</h3>
-                                <h2>₹${order.total_amount}</h2>
-                            </div>
-                            <div class="detail"><strong>Customer:</strong> <span>${order.customer_name}</span></div>
-                            <div class="detail"><strong>Time:</strong> <span>${timeStr}</span></div>
-                            
-                            <div class="item-list">${order.items}</div>
-                            
-                            <div class="detail" style="margin-top:15px; align-items:center;">
-                                <strong>Payment UTR:</strong> 
-                                <span class="utr-box">${order.utr_id}</span>
-                            </div>
-                            
-                            <a href="tel:${order.phone}" class="call-btn">📞 Call ${order.phone}</a>
-                        </div>`;
-                });
+        function renderOrders() {
+            const liveGrid = document.getElementById('live-orders-grid');
+            const historyGrid = document.getElementById('history-grid');
+            
+            liveGrid.innerHTML = '';
+            historyGrid.innerHTML = '';
+
+            const newOrders = allOrders.filter(o => o.status === 'New Order');
+            const completedOrders = allOrders.filter(o => o.status === 'Completed');
+
+            if(newOrders.length === 0) liveGrid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No new orders.</p>';
+            if(completedOrders.length === 0) historyGrid.innerHTML = '<p style="grid-column:1/-1; text-align:center;">No history.</p>';
+
+            newOrders.forEach(o => liveGrid.appendChild(createOrderCard(o, false)));
+            completedOrders.forEach(o => historyGrid.appendChild(createOrderCard(o, true)));
+        }
+
+        function createOrderCard(order, isHistory) {
+            const dateObj = new Date(order.created_at);
+            const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = dateObj.toLocaleDateString('en-IN');
+            
+            const div = document.createElement('div');
+            div.className = `order-card ${isHistory ? 'completed' : ''}`;
+            
+            div.innerHTML = `
+                <div class="order-header">
+                    <div class="order-id">#${order.id}</div>
+                    <div class="order-time">${dateStr} ${timeStr}</div>
+                </div>
+                <div class="order-details">
+                    <p><strong>Customer:</strong> ${order.customer_name}</p>
+                    <p><strong>Phone:</strong> ${order.phone}</p>
+                    <p><strong>UTR No:</strong> <span style="background:#E3F2FD; padding:2px 6px; border-radius:4px;">${order.utr_id}</span></p>
+                </div>
+                <div class="order-items">${order.items}</div>
+                <div class="order-total">₹${order.total_amount}</div>
+                
+                ${!isHistory ? `
+                <div class="action-btns">
+                    <button class="btn-print" onclick="printBill(${order.id})"><i class="fas fa-print"></i> Print</button>
+                    <button class="btn-done" onclick="markCompleted(${order.id})"><i class="fas fa-check"></i> Done</button>
+                </div>
+                ` : `
+                 <div class="action-btns">
+                    <button class="btn-print" onclick="printBill(${order.id})" style="width:100%;"><i class="fas fa-print"></i> Re-Print Receipt</button>
+                </div>
+                `}
+            `;
+            return div;
+        }
+
+        async function markCompleted(id) {
+            if(!confirm("Mark this order as Completed?")) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('orders')
+                    .update({ status: 'Completed' })
+                    .eq('id', id);
+                    
+                if (error) throw error;
+                fetchOrders(); // Refresh
+            } catch (err) {
+                alert("Error updating order: " + err.message);
             }
-            container.innerHTML = html;
+        }
+
+        function printBill(id) {
+            const order = allOrders.find(o => o.id === id);
+            if(!order) return;
+
+            const dateObj = new Date(order.created_at);
+            
+            // Thermal Receipt Format
+            let printHtml = `
+            <div class="bill-container">
+                <div class="text-center bold" style="font-size:16px;">SONE RESTAURANT</div>
+                <div class="text-center border-bottom">Dumraon Station Road</div>
+                
+                <div>Bill No: ${order.id}</div>
+                <div>Date: ${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString()}</div>
+                <div>Customer: ${order.customer_name}</div>
+                <div class="border-bottom">Mob: ${order.phone}</div>
+                
+                <table style="margin: 10px 0;">
+                    <tr class="border-bottom">
+                        <th>Items</th>
+                        <th class="right">Amt</th>
+                    </tr>
+            `;
+
+            // Parsing items string (format: "2x Item Name, 1x Another Item")
+            const itemLines = order.items.split(',');
+            itemLines.forEach(line => {
+                let parts = line.split('x ');
+                if(parts.length === 2) {
+                    printHtml += `<tr><td>${parts[0].trim()} x ${parts[1].trim()}</td><td class="right">-</td></tr>`;
+                } else {
+                     printHtml += `<tr><td colspan="2">${line.trim()}</td></tr>`;
+                }
+            });
+
+            printHtml += `
+                </table>
+                <div class="border-bottom"></div>
+                <table style="margin-bottom:10px; font-size:14px; font-weight:bold;">
+                    <tr>
+                        <td>TOTAL:</td>
+                        <td class="right">Rs. ${order.total_amount}</td>
+                    </tr>
+                </table>
+                <div>Payment UTR: ${order.utr_id}</div>
+                <div class="text-center border-bottom" style="margin-top:10px;">Paid Online via QR</div>
+                <div class="text-center bold" style="margin-top:10px;">Thank You! Visit Again</div>
+            </div>
+            `;
+
+            document.getElementById('print-area').innerHTML = printHtml;
+            window.print();
         }
     </script>
 </body>
