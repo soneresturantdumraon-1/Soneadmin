@@ -3,82 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sone Restro - Live Orders</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Sone Restro - Admin App</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-        .topbar { background: #1e293b; padding: 15px 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid #334155; }
-        .topbar h1 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
-        .pulse { width: 12px; height: 12px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 10px #22c55e; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background: #f4f7f6; color: #333; display: flex; height: 100vh; overflow: hidden; }
         
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .order-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; border-left: 4px solid #ef4444; }
-        .order-header { display: flex; justify-content: space-between; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 12px; }
-        .order-id { font-size: 18px; font-weight: 700; }
-        .order-amount { font-size: 18px; font-weight: 700; color: #22c55e; background: rgba(34, 197, 94, 0.1); padding: 4px 10px; border-radius: 8px; }
+        /* LOGIN SCREEN */
+        #login-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 1000; flex-direction: column; }
+        .login-box { background: white; padding: 40px 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .login-logo { width: 180px; margin-bottom: 20px; }
+        .login-box input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+        .login-btn { width: 100%; background: #d32f2f; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
+
+        /* DASHBOARD LAYOUT */
+        #dashboard { display: none; width: 100%; height: 100%; }
         
-        .detail-row { display: flex; margin-bottom: 8px; font-size: 14px; }
-        .detail-label { color: #94a3b8; width: 80px; font-weight: 600; }
-        .detail-value { color: #e2e8f0; font-weight: 500; }
-        .utr-badge { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 6px; letter-spacing: 1px; }
-        
-        .call-btn { background: #ef4444; color: white; text-decoration: none; padding: 10px; border-radius: 8px; text-align: center; font-weight: 600; font-size: 14px; display: block; margin-top: 15px; }
-        .error-msg { background: #7f1d1d; color: #fca5a5; padding: 20px; border-radius: 12px; border: 1px solid #991b1b; grid-column: 1 / -1; }
+        /* SIDEBAR */
+        .sidebar { width: 260px; background: #1e293b; color: white; display: flex; flex-direction: column; padding: 20px; transition: 0.3s; }
+        .sidebar-logo { width: 120px; align-self: center; margin-bottom: 30px; background: white; padding: 10px; border-radius: 10px; }
+        .menu-item { padding: 15px; margin-bottom: 10px; background: #334155; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .menu-item.active { background: #d32f2f; }
+        .logout-btn { margin-top: auto; background: transparent; border: 2px solid #ef4444; color: #ef4444; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; }
+
+        /* MAIN CONTENT */
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; background: #f8fafc; }
+        .topbar { background: white; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .topbar h2 { color: #1e293b; font-size: 20px; }
+        .sync-badge { background: #22c55e; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+
+        .order-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #d32f2f; }
+        .order-header { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .order-header h3 { color: #d32f2f; margin:0; }
+        .order-header h2 { margin:0; color: #22c55e; }
+        .detail { margin-bottom: 5px; font-size: 15px; color: #555; }
+        .detail strong { color: #222; }
+        .call-btn { display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; margin-top: 15px; font-weight: bold; font-size: 14px; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; } /* Mobile me sidebar hide, direct orders dikhenge */
+        }
     </style>
 </head>
 <body>
 
-    <div class="topbar">
-        <h1><div class="pulse"></div> Live Orders Panel</h1>
-        <div style="color: #94a3b8; font-size: 14px;">Auto Syncing...</div>
+    <!-- App Install Script -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+        <div class="login-box">
+            <img src="./sonelogo1_2.png" class="login-logo" alt="Sone Restaurant Logo">
+            <h2 style="margin-bottom: 20px; color:#1e293b;">Admin Login</h2>
+            <input type="text" id="username" placeholder="Username (admin)">
+            <input type="password" id="password" placeholder="Password (12345)">
+            <button class="login-btn" onclick="checkLogin()">LOGIN</button>
+            <p id="error-msg" style="color:red; margin-top:10px; display:none;">Invalid Username or Password!</p>
+        </div>
     </div>
 
-    <div id="orders-container" class="grid-container">
-        <div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px;">Fetching Latest Orders...</div>
+    <!-- DASHBOARD -->
+    <div id="dashboard">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <img src="./sonelogo_2.png" class="sidebar-logo" alt="Logo">
+            <div class="menu-item active">📊 Live Orders</div>
+            <div class="menu-item">👥 Customer List</div>
+            <div class="menu-item">⚙️ Settings</div>
+            <div class="logout-btn" onclick="logout()">LOGOUT</div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <div class="topbar">
+                <h2>Live Customer Orders</h2>
+                <span class="sync-badge">Auto Sync ON</span>
+            </div>
+            
+            <div id="orders-container">
+                <p style="text-align:center; margin-top:50px; color:#888;">Fetching latest orders...</p>
+            </div>
+        </div>
     </div>
 
     <script>
+        // Supabase Connection
         const SUPABASE_URL = 'https://gvsimqxwfuugugssvcus.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2c2ltcXh3ZnV1Z3Vnc3N2Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NTcwOTUsImV4cCI6MjEwNjMzMzA5NX0.b1aIHuURJ4jqy7T9ulzzD9e5O7fjTcuer0_QhPlZTKk';
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Simple Login Logic
+        function checkLogin() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            if(user === 'admin' && pass === '12345') {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'flex';
+                fetchOrders(); // Login hote hi order layega
+                setInterval(fetchOrders, 8000); // 8 sec refresh
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+
+        function logout() {
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+
+        // Fetch Orders Function
         async function fetchOrders() {
-            const container = document.getElementById('orders-container');
-            
             let { data: orders, error } = await supabase.from('orders').select('*').order('id', { ascending: false });
 
+            const container = document.getElementById('orders-container');
             if (error) { 
-                container.innerHTML = `<div class="error-msg"><b>Supabase Error:</b> ${error.message} <br><br> Please check if you ran the SQL Query correctly in Supabase.</div>`;
+                container.innerHTML = `<p style="color:red; text-align:center;">Error: ${error.message}</p>`;
                 return; 
             }
 
             let html = '';
             if(orders.length === 0) {
-                html = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px;">No incoming orders right now.</div>';
+                html = '<p style="text-align:center; color:#888;">No orders yet.</p>';
             } else {
                 orders.forEach(order => {
                     const timeStr = new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
                     html += `
                         <div class="order-card">
                             <div class="order-header">
-                                <div class="order-id">#${order.id}</div>
-                                <div class="order-amount">₹${order.total_amount}</div>
+                                <h3>Order #${order.id} <span style="font-size:12px; color:#888;">(${timeStr})</span></h3>
+                                <h2>₹${order.total_amount}</h2>
                             </div>
-                            <div class="detail-row"><div class="detail-label">Time</div><div class="detail-value">${timeStr}</div></div>
-                            <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value">${order.customer_name}</div></div>
-                            <div class="detail-row"><div class="detail-label">Items</div><div class="detail-value" style="color:#cbd5e1;">${order.items}</div></div>
-                            <div class="detail-row"><div class="detail-label">UTR</div><div class="detail-value"><span class="utr-badge">${order.utr_id}</span></div></div>
-                            <a href="tel:${order.phone}" class="call-btn">📞 Call Customer</a>
+                            <div class="detail"><strong>Customer Name:</strong> ${order.customer_name}</div>
+                            <div class="detail"><strong>Mobile Number:</strong> ${order.phone}</div>
+                            <div class="detail"><strong>Items Ordered:</strong> <span style="color:#d32f2f; font-weight:600;">${order.items}</span></div>
+                            <div class="detail"><strong>Payment UTR:</strong> <span style="background:#fff3cd; padding:2px 8px; border-radius:5px; border:1px solid #ffe69c;">${order.utr_id}</span></div>
+                            <a href="tel:${order.phone}" class="call-btn">📞 Call ${order.customer_name}</a>
                         </div>`;
                 });
             }
             container.innerHTML = html;
         }
-
-        setInterval(fetchOrders, 8000); // 8-second refresh
-        fetchOrders();
     </script>
 </body>
 </html>
