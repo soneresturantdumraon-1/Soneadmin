@@ -1,15 +1,14 @@
 {
-  "name": "Sone Admin Panel",
-  "short_name": "Admin Sone",
+  "name": "Sone Admin Dashboard",
+  "short_name": "Sone Admin",
+  "description": "Admin panel to manage live orders for Sone Restaurant.",
+  "start_url": "./admin.html",
   "display": "standalone",
-  "start_url": "./index.html",
-  "background_color": "#0f172a",
-  "theme_color": "#1e293b",
+  "background_color": "#F4F5F7",
+  "theme_color": "#b31217",
+  "orientation": "portrait-primary",
   "icons": [
-    {
-      "src": "./sonelogo_2.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    }
+    { "src": "sonelogo1.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "sonelogo1.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
