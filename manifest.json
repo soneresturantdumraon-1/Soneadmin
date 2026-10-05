@@ -1,7 +1,7 @@
 {
   "name": "Sone Admin Dashboard",
   "short_name": "Sone Admin",
-  "description": "Admin panel to manage live orders for Sone Restaurant.",
+  "description": "Admin panel to manage orders and POS for Sone Restaurant.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F4F5F7",
