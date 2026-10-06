@@ -13,14 +13,23 @@
     <style>
         :root { --bg: #F2F2F7; --card: #FFFFFF; --text: #1C1C1E; --text-muted: #8E8E93; --orange: #FF9500; --green: #34C759; --red: #FF3B30; --blue: #007AFF; --input-bg: rgba(118, 118, 128, 0.12); --separator: rgba(60, 60, 67, 0.1); --radius: 16px; --shadow: 0 4px 14px rgba(0,0,0,0.05); }
         body { font-family: 'Poppins', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden;}
+        
+        /* LOGIN SCREEN */
         #login-screen { position:fixed; top:0; left:0; width:100vw; height:100vh; background: url('sonfront.png') center/cover no-repeat; z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing: border-box;}
-        .login-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1;}
-        .login-box { background: #ffffff; padding: 40px 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); width: 100%; max-width: 360px; text-align: center; border: 1px solid #eee; z-index:2; position:relative;}
+        .login-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 1;}
+        .login-box { background: #ffffff; padding: 40px 25px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); width: 100%; max-width: 380px; text-align: center; z-index:2; position:relative;}
+        .login-logo { width: 220px; margin-bottom: 20px; filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.1)); }
+        
         .login-input { width: 100%; padding: 14px 15px 14px 45px; border: 2px solid #E5E5EA; border-radius: 12px; box-sizing: border-box; font-size: 15px; outline: none; margin-bottom: 15px;}
-        .login-btn { width: 100%; padding: 15px; background: #b31217; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 16px;}
+        .login-btn { width: 100%; padding: 15px; background: #b31217; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;}
+        
         #app-container { display: none; flex-direction: column; width: 100%; min-height: 100vh; }
-        .top-header { background: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05);}
-        .top-header img { height: 40px; object-fit: contain; }
+        
+        /* TITLE BAR */
+        .top-header { background: #fff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.06);}
+        .top-header .center-logo { height: 60px; object-fit: contain; margin: 0 auto;}
+        
+        /* SIDEBAR */
         .sidebar { width: 260px; background: #FFFFFF; position: fixed; height: 100%; left: -260px; top: 0; z-index: 1001; transition: 0.3s; overflow-y:auto; box-shadow: 2px 0 15px rgba(0,0,0,0.1);}
         .sidebar.show { left: 0; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; display: none; }
@@ -28,17 +37,20 @@
         .nav-links { list-style: none; padding: 15px 10px; margin: 0; }
         .nav-links a { display: flex; align-items: center; padding: 12px 15px; color: var(--text); text-decoration: none; font-weight: 500; border-radius: 12px; cursor: pointer; margin-bottom:5px;}
         .nav-links a.active { background: #b31217; color: #fff; }
+        
         .tab-panel { display: none; padding: 15px; }
         .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
         .card { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px;}
-        .section-title { margin: 0 0 15px 0; font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--separator); padding-bottom: 10px;}
+        .section-title { margin: 0 0 15px 0; font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--separator); padding-bottom: 10px; color:#b31217;}
         .form-group { margin-bottom: 15px; position:relative;}
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--text-muted); }
         input[type="text"], input[type="number"], input[type="date"], input[type="file"] { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 12px; background: var(--input-bg); font-size: 15px; box-sizing: border-box; font-family: inherit;}
         .btn-add { background: var(--blue); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;}
         .btn-checkout { background: var(--green); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer; width: 100%;}
         .btn-clear { background: #ffebee; color: var(--red); border: 1px solid #ffcdd2; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%;}
+        
         .autocomplete-items { position: absolute; border: 1px solid var(--separator); z-index: 99; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: var(--card); border-radius: 8px; box-shadow: var(--shadow); }
         .autocomplete-items div { padding: 12px; cursor: pointer; border-bottom: 1px solid var(--separator); font-size: 14px; display:flex; justify-content:space-between;}
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -57,11 +69,12 @@
     </style>
 </head>
 <body>
+    <!-- LOGIN SCREEN -->
     <div id="login-screen">
         <div class="login-overlay"></div>
         <div class="login-box">
-            <img src="sonelogo1.png" alt="Logo" style="width:140px; margin-bottom:15px;">
-            <p style="color:#b31217; font-weight:bold; font-size:18px;">ADMIN POS</p>
+            <img src="sonelogo1.png" alt="Sone Logo" class="login-logo">
+            <p style="color:#333; font-weight:800; font-size:20px; margin-top:0; font-family:'Montserrat';">ADMIN DASHBOARD</p>
             <div style="position: relative;">
                 <i class="fas fa-envelope" style="position: absolute; left: 16px; top: 22px; transform: translateY(-50%); color: #8E8E93;"></i>
                 <input type="email" id="login-email" placeholder="Email Address" class="login-input">
@@ -70,46 +83,49 @@
                 <i class="fas fa-lock" style="position: absolute; left: 16px; top: 22px; transform: translateY(-50%); color: #8E8E93;"></i>
                 <input type="password" id="login-password" placeholder="Password" class="login-input">
             </div>
-            <button onclick="loginUser()" class="login-btn">LOGIN</button>
+            <button onclick="loginUser()" class="login-btn">LOGIN SECURELY</button>
             <p id="login-error" style="color: #FF3B30; font-size: 13px; margin-top: 15px; font-weight: 600; min-height: 20px;"></p>
         </div>
     </div>
 
     <div id="app-container">
+        <!-- SIDEBAR -->
         <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
         <div class="sidebar" id="sidebar">
-            <div style="padding: 30px 20px; text-align: center; border-bottom: 1px solid #eee;">
-                <img src="sonelogo1.png" alt="Logo" style="width: 100px; margin-bottom: 10px;">
-                <h3 style="margin:0; font-family:'Montserrat'; color:#b31217;">ADMIN PANEL</h3>
+            <div style="padding: 30px 20px; text-align: center; border-bottom: 1px solid #eee; background: #fafafa;">
+                <img src="sonelogo.png" alt="Sone Icon" style="width: 120px; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
+                <h3 style="margin:0; font-family:'Montserrat'; color:#333;">MANAGER</h3>
             </div>
             <ul class="nav-links">
-                <li><a class="active" onclick="openTab('liveOrdersTab', this)"><i class="fas fa-satellite-dish" style="margin-right:10px;"></i> Live Orders</a></li>
-                <li><a onclick="openTab('billingTab', this)"><i class="fas fa-receipt" style="margin-right:10px;"></i> Bill Receipt (POS)</a></li>
-                <li><a onclick="openTab('historyTab', this)"><i class="fas fa-history" style="margin-right:10px;"></i> POS History</a></li>
-                <li><a onclick="openTab('menuUpdateTab', this)"><i class="fas fa-edit" style="margin-right:10px;"></i> Menu Update</a></li>
-                <li><a onclick="openTab('recycleBinTab', this)"><i class="fas fa-trash-restore" style="margin-right:10px;"></i> Recycle Bin</a></li>
-                <li><a onclick="openTab('backupRestoreTab', this)"><i class="fas fa-cloud-download-alt" style="margin-right:10px;"></i> Manual Backup</a></li>
-                <li id="installAppContainer" style="display:none; margin-top:10px;"><a onclick="installAdminApp()" style="background:var(--green); color:white;"><i class="fas fa-download" style="margin-right:10px;"></i> Install App</a></li>
-                <li style="margin-top:20px;"><a onclick="logoutUser()" style="color:var(--red);"><i class="fas fa-sign-out-alt" style="margin-right:10px;"></i> Logout</a></li>
+                <li><a class="active" onclick="openTab('liveOrdersTab', this)"><i class="fas fa-satellite-dish" style="margin-right:15px; width:20px;"></i> Live Orders</a></li>
+                <li><a onclick="openTab('billingTab', this)"><i class="fas fa-receipt" style="margin-right:15px; width:20px;"></i> Bill Receipt (POS)</a></li>
+                <li><a onclick="openTab('historyTab', this)"><i class="fas fa-history" style="margin-right:15px; width:20px;"></i> POS History</a></li>
+                <li><a onclick="openTab('menuUpdateTab', this)"><i class="fas fa-edit" style="margin-right:15px; width:20px;"></i> Menu Update</a></li>
+                <li><a onclick="openTab('recycleBinTab', this)"><i class="fas fa-trash-restore" style="margin-right:15px; width:20px;"></i> Recycle Bin</a></li>
+                <li><a onclick="openTab('backupRestoreTab', this)"><i class="fas fa-cloud-download-alt" style="margin-right:15px; width:20px;"></i> Data Backup</a></li>
+                <li id="installAppContainer" style="display:none; margin-top:10px;"><a onclick="installAdminApp()" style="background:var(--green); color:white;"><i class="fas fa-download" style="margin-right:15px; width:20px;"></i> Install App</a></li>
+                <li style="margin-top:20px;"><a onclick="logoutUser()" style="color:var(--red);"><i class="fas fa-sign-out-alt" style="margin-right:15px; width:20px;"></i> Logout</a></li>
             </ul>
         </div>
 
+        <!-- TITLE BAR -->
         <div class="top-header">
             <button onclick="toggleSidebar()" style="background:transparent; border:none; font-size:24px; color:#1C1C1E; cursor:pointer;"><i class="fas fa-bars"></i></button>
-            <img src="sonelogo1.png" alt="Sone Restaurant">
-            <div style="font-size:12px; font-weight:600; color:#888;" id="displayDate"></div>
+            <img src="sonelogo1.png" alt="Sone Restaurant" class="center-logo">
+            <div style="font-size:12px; font-weight:700; color:#b31217;" id="displayDate"></div>
         </div>
 
+        <!-- TABS -->
         <div id="liveOrdersTab" class="tab-panel active">
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-bell" style="color:var(--red);"></i> New Online Orders</h3>
+                <h3 class="section-title"><i class="fas fa-bell"></i> New Online Orders</h3>
                 <div id="ordersContainer">Loading Orders...</div>
             </div>
         </div>
 
         <div id="billingTab" class="tab-panel">
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-search" style="color:var(--blue);"></i> Create Bill Receipt</h3>
+                <h3 class="section-title"><i class="fas fa-search"></i> Create Bill Receipt</h3>
                 <div class="form-group autocomplete-container">
                     <label>Item Name</label>
                     <input type="text" id="itemInput" placeholder="Ex: Paneer, Mutton..." autocomplete="off">
@@ -121,7 +137,6 @@
                 </div>
                 <button class="btn-add" style="background:#1C1C1E;" onclick="addItemToBill()"><i class="fas fa-plus"></i> Add to Bill</button>
             </div>
-
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px;">
                     <h3 style="margin:0; font-size: 18px; font-weight: 700;"><i class="fas fa-file-invoice"></i> Current Bill</h3>
@@ -148,7 +163,7 @@
 
         <div id="historyTab" class="tab-panel">
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-history" style="color:var(--blue);"></i> Offline POS History</h3>
+                <h3 class="section-title"><i class="fas fa-history"></i> Offline POS History</h3>
                 <input type="date" id="filterDate" onchange="loadHistory()" style="margin-bottom:15px;">
                 <div style="overflow-y:auto; max-height:400px;">
                     <table>
@@ -159,19 +174,20 @@
             </div>
         </div>
 
+        <!-- MENU UPDATE TAB WITH EDIT/DELETE -->
         <div id="menuUpdateTab" class="tab-panel">
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-plus-circle" style="color:var(--green);"></i> Add/Update Menu Item</h3>
+                <h3 class="section-title"><i class="fas fa-plus-circle"></i> Add / Edit Menu Item</h3>
                 <div class="form-group"><label>Item Name</label><input type="text" id="newMenuName" placeholder="Ex: Chicken Lollypop"></div>
                 <div class="form-group"><label>Price (₹)</label><input type="number" id="newMenuPrice" placeholder="Ex: 250"></div>
                 <button class="btn-add" style="background:#b31217;" onclick="saveMenuItem()"><i class="fas fa-cloud-upload-alt"></i> Save & Sync to Cloud</button>
             </div>
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-list" style="color:var(--orange);"></i> Current Menu</h3>
+                <h3 class="section-title"><i class="fas fa-list"></i> Current Menu</h3>
                 <input type="text" id="searchMenu" onkeyup="filterMenuTable()" placeholder="Search menu..." style="margin-bottom:10px;">
                 <div style="overflow-y:auto; max-height:400px;">
                     <table id="menuUpdateTable">
-                        <thead><tr><th>Item Name</th><th>Price</th><th style="text-align:center;">Del</th></tr></thead>
+                        <thead><tr><th>Item Name</th><th>Price</th><th style="text-align:center;">Action</th></tr></thead>
                         <tbody id="menuUpdateBody"></tbody>
                     </table>
                 </div>
@@ -180,7 +196,7 @@
 
         <div id="recycleBinTab" class="tab-panel">
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-trash-restore" style="color:var(--red);"></i> Recycle Bin</h3>
+                <h3 class="section-title"><i class="fas fa-trash-restore"></i> Recycle Bin</h3>
                 <div style="overflow-y:auto; max-height:400px;">
                     <table>
                         <thead><tr><th>Bill No.</th><th>Total</th><th style="text-align:center;">Action</th></tr></thead>
@@ -192,9 +208,9 @@
 
         <div id="backupRestoreTab" class="tab-panel">
             <div class="card">
-                <h3 class="section-title"><i class="fas fa-cloud-download-alt" style="color:var(--blue);"></i> Data Transfer (Backup)</h3>
+                <h3 class="section-title"><i class="fas fa-cloud-download-alt"></i> Data Transfer (Backup)</h3>
                 <div style="margin-top:20px; padding:15px; border:1px solid var(--separator); border-radius:10px;">
-                    <button class="btn-checkout" style="background:#1C1C1E;" onclick="exportBackup()"><i class="fas fa-download"></i> Download Backup</button>
+                    <button class="btn-checkout" style="background:#1C1C1E;" onclick="exportBackup()"><i class="fas fa-download"></i> Download Backup JSON</button>
                 </div>
                 <div style="margin-top:20px; padding:15px; border:1px solid var(--separator); border-radius:10px;">
                     <input type="file" id="importFile" accept=".json" style="margin-bottom:10px;">
@@ -203,6 +219,7 @@
             </div>
         </div>
 
+        <!-- MODALS -->
         <div id="checkoutModal" class="modal">
             <div class="modal-content">
                 <h3 style="margin: 0 0 10px 0; text-align: center;">Complete Payment</h3>
@@ -241,21 +258,17 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2c2ltcXh3ZnV1Z3Vnc3N2Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NTcwOTUsImV4cCI6MjEwNjMzMzA5NX0.b1aIHuURJ4jqy7T9ulzzD9e5O7fjTcuer0_QhPlZTKk'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // PERMANENT DEFAULT MENU BACKUP (To prevent data loss)
+        const PERMANENT_MENU = {
+            "Aloo Dam Banarsi": 180, "Aloo Dam Kashmiri": 190, "Aloo Do Payaza": 140, "Aloo Govi": 130, "Aloo Matar": 130, "Aloo Palak": 130, "Aloo Paneer": 150, "Aloo Paratha": 70, "Aloo Parwal": 130,
+            "Baby Corn Crispry": 270, "Boondi Raita": 110, "Boondi Raita (H)": 70, "Butter Naan": 80, "Butter Roti": 15, "Chi. Butter Masala": 200, "Chi. Chilly (B) (F)": 230, "Chi. Chilly (B) (H)": 150, "Chi. Chilly (B/L) (F)": 290, "Chi. Chilly (B/L) (H)": 170, "Chi. Curry": 160, "Chi. Dehati (F)": 550, "Chi. Dehati (H)": 320, "Chi. Do Payaza": 180, "Chi. Estu": 190, "Chi. Fried Rice": 260, "Chi. Ginger Kabab": 260, "Chi. Goli Kabab": 260, "Chi. Karahi": 220, "Chi. Kasha (F)": 510, "Chi. Kurma": 210, "Chi. Leg Kabab": 280, "Chi. Lolliop (B/L) (F)": 310, "Chi. Manchurian": 280, "Chi. Masala": 200, "Chi. Moglai": 210, "Chi. Moglai Paratha": 190, "Chi. Murg Mussalam": 560, "Chi. Noorani": 230, "Chi. Pasanda": 220, "Chi. Reshmi Kabab": 280, "Chi. Shahi Kurma": 210, "Chi. Sone Spl. (F)": 570, "Chi. Sone Spl. (H)": 340, "Chi. Tandoori (F)": 450, "Chi. Tandoori (H)": 260, "Chi. Tikka": 270, "Chi. Tikka Butter Masala": 330,
+            "Chicken Biryani": 220, "Chicken Chowmein": 270, "Chicken Cream Soup": 140, "Chicken Cutlete": 200, "Chicken Fry": 160, "Chicken Hot & Source Soup": 170, "Chicken Manchow Soup": 150, "Chicken Pakora": 260, "Chicken Pulao": 230, "Chicken Roll": 230, "Cholla Bhatura": 110, "Coffee": 45, "Curd": 80, "Dal Butter Fry": 130, "Dal Fry": 110, "Dal Makhani": 140, "Dal Moglai": 160, "Dal Tarka": 120, "Egg Biryani": 190, "Egg Bugiya": 80, "Egg Butter Masala": 140, "Egg Chowmein": 230, "Egg Do Payaza": 120, "Egg Fried Rice": 190, "Egg Masala": 150, "Egg Pakora": 160, "Egg. Curry": 110, "Egg. Roll": 150, "Finger Chips": 130, "Fish Curry": 150, "Fish Do Pyaza": 150, "Fish Estu": 160, "Fish Fry": 140, "Fish Masala": 160, "Fresh Paneer": 200, "Fruit Cream": 90, "Garlic Naan": 90, "Govi Pakora": 140, "Green Salad- L": 110, "Green Salad- S": 70, "Jeera Rice": 110, "Jeera Rice (H)": 70, "Jeera thanda 20": 20, "Kaju Paneer": 300, "Kalajamun": 25, "Khir": 80, "Malai Kofta": 210, "Masala Kulcha": 110, "Matar Paneer": 150, "Mix Chowmein": 260, "Mix Vegetable": 150, "Mix. Fried Rice": 270, "Mushroom (B) Masala": 230, "Mushroom (H)": 160, "Mushroom Chilly (F)": 250, "Mushroom Chilly (H)": 150, "Mushroom Chowmein": 250, "Mushroom Curry": 210, "Mushroom Dehati": 300, "Mushroom Dehati (H)": 160, "Mushroom Do Piyaza": 220, "Mushroom Estu": 220, "Mushroom Fried Rice": 250, "Mushroom Karahi": 240, "Mushroom Masala": 230, "Mutton Curry (4 Pic)": 300, "Mutton Do Pyaza (4 Pic)": 320, "Mutton Estu (2 Pic)": 220, "Mutton Spl. (12 Pic) F+H": 980, "Mutton Spl. (8 Pic)": 650, "Naan": 60, "Omlete": 60, "Omlete Curry": 120, "Onion Fry Rice": 120, "Onion Pakora": 150, "Palak Paneer": 170, "Paneer Bhujiya": 210, "Paneer Butter Masala": 200, "Paneer Chilly (F)": 220, "Paneer Chilly (H)": 140, "Paneer Chowmein": 240, "Paneer Dehati (F)": 290, "Paneer Dehati (H)": 160, "Paneer Diwani": 250, "Paneer Do Pyaza": 190, "Paneer Estu": 210, "Paneer Fried Rice": 250, "Paneer Goli Kabab": 250, "Paneer Karahi": 230, "Paneer Karahi (H)": 140, "Paneer Masala": 200, "Paneer Pakora": 240, "Paneer Paratha": 110, "Paneer Pasanda": 220, "Paneer Punjabi": 250, "Paneer Sandwich": 130, "Paneer Shahi Kurma": 230, "Paneer Stuff Naan": 140, "Paneer Stuff Paratha": 110, "Paneer Tikka": 250, "Paneer biryani": 240, "Pappad Masala": 120, "Peanut": 120, "Peanut Masala": 150, "Pease Pulao": 140, "Plain Dal": 90, "Plain Kulcha": 80, "Plain Rice": 100, "Plain Rice (H)": 60, "Rasgulla": 20, "Roti": 12, "Seasonal Veg. Bhujiya": 120, "Shahi Naan": 130, "Shahi Paneer": 210, "Shahi Paratha": 130, "Sone Shahi Paratha": 140, "Sone Special Pulao": 210, "Sone Spl. Paneer": 270, "Sone Spl. Paneer (F+H)": 430, "Sone Spl. Paneer Chat-Patta": 250, "Sone Spl. Veg.": 180, "Stuff Capssicam": 160, "Stuff Tomato": 160, "Sweet Corn Crispy": 110, "T. Paratha": 70, "Tawa Butter Roti": 12, "Tawa Roti": 10, "Tea Spl.": 20, "Thanda 40": 40, "Thanda 45": 45, "Thanda 50": 50, "Thanda 60": 60, "Thanda 90": 90, "Thanda 90 Coco cola": 90, "Thanda Bottle 30": 30, "Thanda Bottle 35": 35, "Tomato Soup": 80, "Tost Omlete": 90, "Tost and Butter": 60, "Veg. Biryani": 170, "Veg. Chowmein (F)": 190, "Veg. Chowmein (H)": 110, "Veg. Cutlete": 160, "Veg. Fried Rice": 170, "Veg. Goli Kabab": 220, "Veg. Hot & Source Soup": 100, "Veg. Jhal Phrazy": 160, "Veg. Kofta Curry": 160, "Veg. Manchow Soup": 120, "Veg. Manchurian (F)": 170, "Veg. Manchurian (H)": 110, "Veg. Moglai Paratha": 120, "Veg. Navratan Kurma": 190, "Veg. Pulao": 150, "Veg. Raita": 130, "Veg. Raita (H)": 70, "Veg. Roll": 120, "Veg. Sandwich": 100, "Veg. Shahi Pulao": 190, "Veg. Stuff Naan": 120, "Veg. Stuff Paratha": 100, "Vegetable Chat-Patta": 160, "Vegetable Pakora": 160, "Water Bottle 20": 20
+        };
+
         // PWA Install Logic
         let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); deferredPrompt = e;
-            document.getElementById('installAppContainer').style.display = 'block';
-        });
-        function installAdminApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') document.getElementById('installAppContainer').style.display = 'none';
-                    deferredPrompt = null;
-                });
-            }
-        }
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('installAppContainer').style.display = 'block'; });
+        function installAdminApp() { if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then((choiceResult) => { if (choiceResult.outcome === 'accepted') document.getElementById('installAppContainer').style.display = 'none'; deferredPrompt = null; }); } }
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
 
         let displayDate = new Date().toLocaleDateString('en-GB');
@@ -279,14 +292,12 @@
         function initApp() { fetchLiveOrders(); fetchAdminMenu(); loadHistory(); updateBillNo(); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('show'); document.getElementById('overlay').classList.toggle('show'); }
         function openTab(tabId, el) { 
-            document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active')); document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
             document.getElementById(tabId).classList.add('active'); if(el) el.classList.add('active'); 
             document.getElementById('sidebar').classList.remove('show'); document.getElementById('overlay').classList.remove('show');
             if(tabId === 'recycleBinTab') loadTrash();
         }
 
-        // Live Orders (With Delete Feature)
         async function fetchLiveOrders() {
             const { data, error } = await supabaseClient.from('customer_orders').select('*').order('id', { ascending: false });
             let container = document.getElementById('ordersContainer');
@@ -297,9 +308,7 @@
                 let isPending = order.order_status.includes('Pending') || order.order_status.includes('Checking');
                 container.innerHTML += `
                 <div class="order-card ${isPending ? '' : 'accepted'}">
-                    <div style="display:flex; justify-content:space-between; font-weight:800; font-size:16px;">
-                        <span>${order.order_id}</span><span style="color:var(--red);">₹${order.total_amount}</span>
-                    </div>
+                    <div style="display:flex; justify-content:space-between; font-weight:800; font-size:16px;"><span>${order.order_id}</span><span style="color:var(--red);">₹${order.total_amount}</span></div>
                     <div style="font-size:13px; color:#666; margin-top:5px;"><i class="fas fa-user"></i> ${order.customer_name} | <i class="fas fa-phone-alt"></i> ${order.phone}</div>
                     <div style="font-size:14px; color:#444; background:#f9f9f9; padding:10px; border-radius:8px; margin:10px 0;">${itemsHtml}</div>
                     <div style="font-size:13px; font-weight:700; color:${isPending ? 'var(--orange)' : 'var(--green)'};">Status: ${order.order_status}</div>
@@ -311,14 +320,9 @@
             });
         }
         async function acceptOrder(orderId) { await supabaseClient.from('customer_orders').update({ order_status: 'Accepted ✅' }).eq('order_id', orderId); fetchLiveOrders(); }
-        async function deleteOnlineOrder(orderId) {
-            if(confirm("Delete this online order completely?")) {
-                await supabaseClient.from('customer_orders').delete().eq('order_id', orderId); fetchLiveOrders();
-            }
-        }
+        async function deleteOnlineOrder(orderId) { if(confirm("Delete this online order completely?")) { await supabaseClient.from('customer_orders').delete().eq('order_id', orderId); fetchLiveOrders(); } }
         setInterval(fetchLiveOrders, 10000);
 
-        // POS Billing Logic
         const input = document.getElementById("itemInput"), list = document.getElementById("autocompleteList");
         input.addEventListener("input", function() {
             list.innerHTML = ""; document.getElementById("priceInput").value = "";
@@ -339,8 +343,7 @@
             let isHalf = (qInput === 'H'), isFullHalf = (qInput === 'FH'), q = 1;
             if(!isHalf && !isFullHalf) { q = parseInt(qInput); if(isNaN(q)||q<=0) return alert("Sahi quantity dalein!"); }
             let finalPrice = p, finalName = n;
-            if (isHalf && !n.includes("(H)")) { finalPrice = Math.round(p / 2); finalName = n + " (Half)"; } 
-            else if (isFullHalf) { finalPrice = p + Math.round(p / 2); finalName = n + " (F+H)"; }
+            if (isHalf && !n.includes("(H)")) { finalPrice = Math.round(p / 2); finalName = n + " (Half)"; } else if (isFullHalf) { finalPrice = p + Math.round(p / 2); finalName = n + " (F+H)"; }
             let totalAmount = finalPrice * q, idx = billItems.findIndex(i => i.name === finalName && i.price === finalPrice);
             if(idx > -1) { billItems[idx].qty += q; billItems[idx].total = billItems[idx].qty * billItems[idx].price; } else { billItems.push({name: finalName, price: finalPrice, qty: q, total: totalAmount}); }
             updateBillDisplay(); document.getElementById("itemInput").value=""; document.getElementById("priceInput").value=""; document.getElementById("qtyInput").value="1";
@@ -370,24 +373,13 @@
             let finalUserBillNo = parseInt(document.getElementById('manualBillNo').value); if(isNaN(finalUserBillNo) || finalUserBillNo <= 0) finalUserBillNo = billCounter;
             
             let nB = { id: Date.now(), billNo: finalUserBillNo, date: displayDate, time: new Date().toLocaleTimeString('en-US'), items: JSON.parse(JSON.stringify(billItems)), total: gt, paid: cash+online, disc: disc, udhaar: (gt - disc - cash - online)>0?(gt - disc - cash - online):0, custName: name };
-            
-            // Save locally
-            let sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || [];
-            sb.push(nB); localStorage.setItem('sone_bills_isolated', JSON.stringify(sb));
-
-            // Sync POS to Supabase (Optional: Requires pos_bills table)
+            let sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || []; sb.push(nB); localStorage.setItem('sone_bills_isolated', JSON.stringify(sb));
             try { await supabaseClient.from('pos_bills').insert([nB]); } catch(e){}
-
             document.getElementById('print-area').innerHTML = getBillHTML(nB); document.getElementById('checkoutModal').style.display = 'none';
             setTimeout(() => { window.print(); billItems=[]; updateBillDisplay(); updateBillNo(); loadHistory(); }, 300);
         }
 
-        function updateBillNo() {
-            let sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || [];
-            if(sb.filter(b=>b.date===displayDate).length > 0) { billCounter = Math.max(...sb.filter(b=>b.date===displayDate).map(b=>b.billNo)) + 1; }
-            document.getElementById('manualBillNo').value = billCounter;
-        }
-
+        function updateBillNo() { let sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || []; if(sb.filter(b=>b.date===displayDate).length > 0) { billCounter = Math.max(...sb.filter(b=>b.date===displayDate).map(b=>b.billNo)) + 1; } document.getElementById('manualBillNo').value = billCounter; }
         function getBillHTML(b) {
             let html = `<div class="bill-container"><div class="bill-header"><span>CASH MEMO</span><span>Mob.: 9155745145</span></div><div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0;">SONE RESTAURANT</h2><div style="font-size:12px;">DUMRAON STATION ROAD</div></div><div style="display:flex; justify-content:space-between; font-size:13px; font-weight:bold; margin-bottom:10px;"><span>Bill No: ${b.billNo}</span><span>Date: ${b.date}</span></div>`;
             if(b.custName) html += `<div style="text-align:left; font-size:14px; font-weight:700; margin-bottom:12px;">Customer: ${b.custName}</div>`;
@@ -395,8 +387,7 @@
             b.items.forEach(i => { html += `<tr><td>${i.name}</td><td style="text-align:center;">${i.qty}</td><td style="text-align:right;">${i.total}</td></tr>`; });
             html += `</table><div style="margin-top:15px; font-weight:bold; font-size:14px;"><div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>₹ ${b.total}</span></div>`;
             if(b.disc > 0) html += `<div style="display:flex; justify-content:space-between;"><span>Discount:</span><span>- ₹ ${b.disc}</span></div>`;
-            html += `<div style="display:flex; justify-content:space-between; font-size:16px; margin-top:10px; border-top:2px dashed #000; padding-top:10px;"><span>GRAND TOTAL</span><span>₹ ${b.total - b.disc}</span></div></div><div style="text-align:center; font-size:12px; margin-top:20px;">Thank You! Visit Again.</div></div>`;
-            return html;
+            html += `<div style="display:flex; justify-content:space-between; font-size:16px; margin-top:10px; border-top:2px dashed #000; padding-top:10px;"><span>GRAND TOTAL</span><span>₹ ${b.total - b.disc}</span></div></div><div style="text-align:center; font-size:12px; margin-top:20px;">Thank You! Visit Again.</div></div>`; return html;
         }
 
         function loadHistory() {
@@ -406,40 +397,44 @@
             let filteredBills = sb.filter(b => b.date === targetDate);
             if (filteredBills.length === 0) { tb.innerHTML = "<tr><td colspan='3' style='text-align:center; color: #888;'>No bills on this date.</td></tr>"; return; }
             filteredBills.sort((a, b) => a.billNo - b.billNo).forEach(b => {
-                tb.innerHTML += `<tr><td><b>#${b.billNo}</b></td><td style="color:var(--green); font-weight:bold;">₹${b.total}</td>
-                <td style="display:flex; gap:10px;"><button onclick="openPreviewModal(${b.id})" style="background:var(--blue);color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;"><i class="fas fa-eye"></i></button><button onclick="moveToTrash(${b.id})" style="background:var(--red);color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`;
+                tb.innerHTML += `<tr><td><b>#${b.billNo}</b></td><td style="color:var(--green); font-weight:bold;">₹${b.total}</td><td style="display:flex; gap:10px;"><button onclick="openPreviewModal(${b.id})" style="background:var(--blue);color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;"><i class="fas fa-eye"></i></button><button onclick="moveToTrash(${b.id})" style="background:var(--red);color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         }
         function openPreviewModal(id) { let sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || []; currentPreviewBill = sb.find(b => b.id === id); if(currentPreviewBill) { document.getElementById('previewReceiptBox').innerHTML = getBillHTML(currentPreviewBill); document.getElementById('previewModal').style.display = 'block'; } }
         function closePreviewModal() { document.getElementById('previewModal').style.display = 'none'; currentPreviewBill = null; }
         function printFromPreview() { if(currentPreviewBill) { document.getElementById('print-area').innerHTML = getBillHTML(currentPreviewBill); closePreviewModal(); setTimeout(() => window.print(), 300); } }
-        function editExistingBill() {
-            if(!currentPreviewBill) return;
-            if(confirm("Edit this bill? (Old bill will move to trash)")) {
-                billItems = JSON.parse(JSON.stringify(currentPreviewBill.items)); document.getElementById('manualBillNo').value = currentPreviewBill.billNo;
-                moveToTrash(currentPreviewBill.id); updateBillDisplay(); closePreviewModal(); openTab('billingTab', document.querySelector('.nav-links a:nth-child(2)'));
-            }
-        }
-        function moveToTrash(id) {
-            let sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || [], trash = JSON.parse(localStorage.getItem('sone_bills_trash')) || [], bill = sb.find(b => b.id === id);
-            if(bill) { trash.push(bill); localStorage.setItem('sone_bills_trash', JSON.stringify(trash)); localStorage.setItem('sone_bills_isolated', JSON.stringify(sb.filter(b=>b.id!==id))); loadHistory(); }
-        }
-        function loadTrash() {
-            let trash = JSON.parse(localStorage.getItem('sone_bills_trash')) || [], tb = document.getElementById("trashBody"); tb.innerHTML = "";
-            trash.reverse().forEach(b => { tb.innerHTML += `<tr><td><b>#${b.billNo}</b></td><td>₹${b.total}</td><td style="display:flex; gap:10px;"><button onclick="restoreBill(${b.id})" style="background:var(--green);color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-undo"></i></button><button onclick="deleteForever(${b.id})" style="background:#555;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-times"></i></button></td></tr>`; });
-        }
+        function editExistingBill() { if(!currentPreviewBill) return; if(confirm("Edit this bill? (Old bill will move to trash)")) { billItems = JSON.parse(JSON.stringify(currentPreviewBill.items)); document.getElementById('manualBillNo').value = currentPreviewBill.billNo; moveToTrash(currentPreviewBill.id); updateBillDisplay(); closePreviewModal(); openTab('billingTab', document.querySelector('.nav-links a:nth-child(2)')); } }
+        function moveToTrash(id) { let sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || [], trash = JSON.parse(localStorage.getItem('sone_bills_trash')) || [], bill = sb.find(b => b.id === id); if(bill) { trash.push(bill); localStorage.setItem('sone_bills_trash', JSON.stringify(trash)); localStorage.setItem('sone_bills_isolated', JSON.stringify(sb.filter(b=>b.id!==id))); loadHistory(); } }
+        function loadTrash() { let trash = JSON.parse(localStorage.getItem('sone_bills_trash')) || [], tb = document.getElementById("trashBody"); tb.innerHTML = ""; trash.reverse().forEach(b => { tb.innerHTML += `<tr><td><b>#${b.billNo}</b></td><td>₹${b.total}</td><td style="display:flex; gap:10px;"><button onclick="restoreBill(${b.id})" style="background:var(--green);color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-undo"></i></button><button onclick="deleteForever(${b.id})" style="background:#555;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-times"></i></button></td></tr>`; }); }
         function restoreBill(id) { let trash = JSON.parse(localStorage.getItem('sone_bills_trash')) || [], sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || []; let bill = trash.find(b => b.id === id); if(bill) { sb.push(bill); localStorage.setItem('sone_bills_isolated', JSON.stringify(sb)); localStorage.setItem('sone_bills_trash', JSON.stringify(trash.filter(b=>b.id!==id))); loadTrash(); loadHistory(); } }
         function deleteForever(id) { let trash = JSON.parse(localStorage.getItem('sone_bills_trash')) || []; localStorage.setItem('sone_bills_trash', JSON.stringify(trash.filter(b=>b.id!==id))); loadTrash(); }
 
-        // Menu Sync
+        // PERMANENT MENU RESTORE & SYNC LOGIC (With Edit Option)
         async function fetchAdminMenu() {
             const { data, error } = await supabaseClient.from('app_menu').select('*');
-            if(data && !error && data.length > 0) { menuData = {}; data.forEach(item => { menuData[item.item_name] = item.price; }); itemNames = Object.keys(menuData); renderMenuUpdateTable(); }
+            if(data && !error && data.length > 0) { 
+                menuData = {}; data.forEach(item => { menuData[item.item_name] = item.price; }); 
+            } else { 
+                // Restore Factory Menu if DB is fully empty
+                menuData = JSON.parse(JSON.stringify(PERMANENT_MENU));
+                let insertData = Object.keys(PERMANENT_MENU).map(key => ({ item_name: key, price: PERMANENT_MENU[key] }));
+                await supabaseClient.from('app_menu').insert(insertData);
+            }
+            itemNames = Object.keys(menuData); renderMenuUpdateTable();
         }
-        function renderMenuUpdateTable() { let tb = document.getElementById("menuUpdateBody"); tb.innerHTML = ""; Object.keys(menuData).sort().forEach(k => { tb.innerHTML += `<tr><td>${k}</td><td style="font-weight:bold; color:var(--green);">₹${menuData[k]}</td><td style="text-align:center;"><button onclick="deleteMenuItem('${k.replace(/'/g, "\\'")}')" style="background:var(--red);color:white;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`; }); }
-        async function saveMenuItem() { let name = document.getElementById("newMenuName").value.trim(), price = parseFloat(document.getElementById("newMenuPrice").value); if(name && price) { await supabaseClient.from('app_menu').upsert({ item_name: name, price: price }); fetchAdminMenu(); document.getElementById("newMenuName").value = ""; document.getElementById("newMenuPrice").value = ""; alert("Saved!"); } }
-        async function deleteMenuItem(name) { if(confirm(`Delete "${name}"?`)) { await supabaseClient.from('app_menu').delete().eq('item_name', name); fetchAdminMenu(); } }
+        function renderMenuUpdateTable() { 
+            let tb = document.getElementById("menuUpdateBody"); tb.innerHTML = ""; 
+            Object.keys(menuData).sort().forEach(k => { 
+                tb.innerHTML += `<tr><td>${k}</td><td style="font-weight:bold; color:var(--green);">₹${menuData[k]}</td><td style="display:flex; gap:5px; justify-content:center;">
+                <button onclick="editMenu('${k.replace(/'/g, "\\'")}', ${menuData[k]})" style="background:var(--blue);color:white;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteMenuItem('${k.replace(/'/g, "\\'")}')" style="background:var(--red);color:white;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`; 
+            }); 
+        }
+        function editMenu(name, price) { document.getElementById("newMenuName").value = name; document.getElementById("newMenuPrice").value = price; window.scrollTo(0,0); }
+        async function saveMenuItem() { let name = document.getElementById("newMenuName").value.trim(), price = parseFloat(document.getElementById("newMenuPrice").value); if(name && price) { await supabaseClient.from('app_menu').upsert({ item_name: name, price: price }); fetchAdminMenu(); document.getElementById("newMenuName").value = ""; document.getElementById("newMenuPrice").value = ""; alert("Menu Updated!"); } }
+        async function deleteMenuItem(name) { if(confirm(`Delete "${name}" permanently?`)) { await supabaseClient.from('app_menu').delete().eq('item_name', name); fetchAdminMenu(); } }
         function filterMenuTable() { let input = document.getElementById("searchMenu").value.toUpperCase(), trs = document.getElementById("menuUpdateBody").getElementsByTagName("tr"); for (let i = 0; i < trs.length; i++) { let td = trs[i].getElementsByTagName("td")[0]; if (td) { trs[i].style.display = (td.innerText.toUpperCase().indexOf(input) > -1) ? "" : "none"; } } }
+        
         function exportBackup() { let data = { bills: JSON.parse(localStorage.getItem('sone_bills_isolated'))||[] }; let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data)); let link = document.createElement('a'); link.href = dataStr; link.download = `Sone_Backup_${displayDate.replace(/\//g, '-')}.json`; link.click(); }
         function importBackup() { let fileInput = document.getElementById('importFile'); if(!fileInput.files.length) return; let reader = new FileReader(); reader.onload = function(e) { try { let data = JSON.parse(e.target.result); if(data.bills) localStorage.setItem('sone_bills_isolated', JSON.stringify(data.bills)); alert("Restored!"); location.reload(); } catch(err) { alert("Invalid file."); } }; reader.readAsText(fileInput.files[0]); }
     </script>
