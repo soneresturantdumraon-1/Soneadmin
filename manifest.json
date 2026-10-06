@@ -8,7 +8,7 @@
   "theme_color": "#b31217",
   "orientation": "portrait-primary",
   "icons": [
-    { "src": "sonelogo1.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "sonelogo1.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "sonelogo1.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "sonelogo.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
