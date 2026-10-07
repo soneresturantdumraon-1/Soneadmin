@@ -1,14 +1,24 @@
 {
-  "name": "Sone Admin Dashboard",
+  "name": "Sone Admin & POS",
   "short_name": "Sone Admin",
-  "description": "Admin panel to manage orders and POS for Sone Restaurant.",
-  "start_url": "./index.html",
+  "description": "Admin Dashboard for Sone Restaurant",
+  "start_url": "./index (3).html",
   "display": "standalone",
-  "background_color": "#F4F5F7",
+  "background_color": "#F2F2F7",
   "theme_color": "#b31217",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "icons": [
-        { "src": "sonelogo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "sonelogo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "sonelogo1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "sonelogo1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
