@@ -71,6 +71,9 @@
         @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { display: flex !important; justify-content: center; position: absolute; left: 0; top: 0; width: 100%; } }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
         .modal-content { background: var(--card); margin: auto; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
+        
+        .call-btn { background: #007AFF; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,122,255,0.3); transition: 0.2s; display:inline-block;}
+        .call-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -108,6 +111,7 @@
                 <li><a onclick="openTab('menuUpdateTab', this)"><i class="fas fa-edit" style="margin-right:15px; width:20px;"></i> Menu Update</a></li>
                 <li><a onclick="openTab('recycleBinTab', this)"><i class="fas fa-trash-restore" style="margin-right:15px; width:20px;"></i> Recycle Bin</a></li>
                 <li><a onclick="openTab('backupRestoreTab', this)"><i class="fas fa-cloud-download-alt" style="margin-right:15px; width:20px;"></i> Data Backup</a></li>
+                <li id="installAppContainer" style="display:none; margin-top:10px;"><a onclick="installAdminApp()" style="background:var(--green); color:white;"><i class="fas fa-download" style="margin-right:15px;"></i> Install App</a></li>
                 <li style="margin-top:20px;"><a onclick="logoutUser()" style="color:var(--red);"><i class="fas fa-sign-out-alt" style="margin-right:15px; width:20px;"></i> Logout</a></li>
             </ul>
         </div>
@@ -269,9 +273,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const PERMANENT_MENU = {
-            "Aloo Dam Banarsi": 180, "Aloo Dam Kashmiri": 190, "Aloo Do Payaza": 140, "Aloo Govi": 130, "Aloo Matar": 130, "Aloo Palak": 130, "Aloo Paneer": 150, "Aloo Paratha": 70, "Aloo Parwal": 130,
-            "Baby Corn Crispry": 270, "Boondi Raita": 110, "Boondi Raita (H)": 70, "Butter Naan": 80, "Butter Roti": 15, "Chi. Butter Masala": 200, "Chi. Chilly (B) (F)": 230, "Chi. Chilly (B) (H)": 150, "Chi. Chilly (B/L) (F)": 290, "Chi. Chilly (B/L) (H)": 170, "Chi. Curry": 160, "Chi. Dehati (F)": 550, "Chi. Dehati (H)": 320, "Chi. Do Payaza": 180, "Chi. Estu": 190, "Chi. Fried Rice": 260, "Chi. Ginger Kabab": 260, "Chi. Goli Kabab": 260, "Chi. Karahi": 220, "Chi. Kasha (F)": 510, "Chi. Kurma": 210, "Chi. Leg Kabab": 280, "Chi. Lolliop (B/L) (F)": 310, "Chi. Manchurian": 280, "Chi. Masala": 200, "Chi. Moglai": 210, "Chi. Moglai Paratha": 190, "Chi. Murg Mussalam": 560, "Chi. Noorani": 230, "Chi. Pasanda": 220, "Chi. Reshmi Kabab": 280, "Chi. Shahi Kurma": 210, "Chi. Sone Spl. (F)": 570, "Chi. Sone Spl. (H)": 340, "Chi. Tandoori (F)": 450, "Chi. Tandoori (H)": 260, "Chi. Tikka": 270, "Chi. Tikka Butter Masala": 330,
-            "Chicken Biryani": 220, "Chicken Chowmein": 270, "Chicken Cream Soup": 140, "Chicken Cutlete": 200, "Chicken Fry": 160, "Chicken Hot & Source Soup": 170, "Chicken Manchow Soup": 150, "Chicken Pakora": 260, "Chicken Pulao": 230, "Chicken Roll": 230, "Cholla Bhatura": 110, "Coffee": 45, "Curd": 80, "Dal Butter Fry": 130, "Dal Fry": 110, "Dal Makhani": 140, "Dal Moglai": 160, "Dal Tarka": 120, "Egg Biryani": 190, "Egg Bugiya": 80, "Egg Butter Masala": 140, "Egg Chowmein": 230, "Egg Do Payaza": 120, "Egg Fried Rice": 190, "Egg Masala": 150, "Egg Pakora": 160, "Egg. Curry": 110, "Egg. Roll": 150, "Finger Chips": 130, "Fish Curry": 150, "Fish Do Pyaza": 150, "Fish Estu": 160, "Fish Fry": 140, "Fish Masala": 160, "Fresh Paneer": 200, "Fruit Cream": 90, "Garlic Naan": 90, "Govi Pakora": 140, "Green Salad- L": 110, "Green Salad- S": 70, "Jeera Rice": 110, "Jeera Rice (H)": 70, "Jeera thanda 20": 20, "Kaju Paneer": 300, "Kalajamun": 25, "Khir": 80, "Malai Kofta": 210, "Masala Kulcha": 110, "Matar Paneer": 150, "Mix Chowmein": 260, "Mix Vegetable": 150, "Mix. Fried Rice": 270, "Mushroom (B) Masala": 230, "Mushroom (H)": 160, "Mushroom Chilly (F)": 250, "Mushroom Chilly (H)": 150, "Mushroom Chowmein": 250, "Mushroom Curry": 210, "Mushroom Dehati": 300, "Mushroom Dehati (H)": 160, "Mushroom Do Piyaza": 220, "Mushroom Estu": 220, "Mushroom Fried Rice": 250, "Mushroom Karahi": 240, "Mushroom Masala": 230, "Mutton Curry (4 Pic)": 300, "Mutton Do Pyaza (4 Pic)": 320, "Mutton Estu (2 Pic)": 220, "Mutton Spl. (12 Pic) F+H": 980, "Mutton Spl. (8 Pic)": 650, "Naan": 60, "Omlete": 60, "Omlete Curry": 120, "Onion Fry Rice": 120, "Onion Pakora": 150, "Palak Paneer": 170, "Paneer Bhujiya": 210, "Paneer Butter Masala": 200, "Paneer Chilly (F)": 220, "Paneer Chilly (H)": 140, "Paneer Chowmein": 240, "Paneer Dehati (F)": 290, "Paneer Dehati (H)": 160, "Paneer Diwani": 250, "Paneer Do Pyaza": 190, "Paneer Estu": 210, "Paneer Fried Rice": 250, "Paneer Goli Kabab": 250, "Paneer Karahi": 230, "Paneer Karahi (H)": 140, "Paneer Masala": 200, "Paneer Pakora": 240, "Paneer Paratha": 110, "Paneer Pasanda": 220, "Paneer Punjabi": 250, "Paneer Sandwich": 130, "Paneer Shahi Kurma": 230, "Paneer Stuff Naan": 140, "Paneer Stuff Paratha": 110, "Paneer Tikka": 250, "Paneer biryani": 240, "Pappad Masala": 120, "Peanut": 120, "Peanut Masala": 150, "Pease Pulao": 140, "Plain Dal": 90, "Plain Kulcha": 80, "Plain Rice": 100, "Plain Rice (H)": 60, "Rasgulla": 20, "Roti": 12, "Seasonal Veg. Bhujiya": 120, "Shahi Naan": 130, "Shahi Paneer": 210, "Shahi Paratha": 130, "Sone Shahi Paratha": 140, "Sone Special Pulao": 210, "Sone Spl. Paneer": 270, "Sone Spl. Paneer (F+H)": 430, "Sone Spl. Paneer Chat-Patta": 250, "Sone Spl. Veg.": 180, "Stuff Capssicam": 160, "Stuff Tomato": 160, "Sweet Corn Crispy": 110, "T. Paratha": 70, "Tawa Butter Roti": 12, "Tawa Roti": 10, "Tea Spl.": 20, "Thanda 40": 40, "Thanda 45": 45, "Thanda 50": 50, "Thanda 60": 60, "Thanda 90": 90, "Thanda 90 Coco cola": 90, "Thanda Bottle 30": 30, "Thanda Bottle 35": 35, "Tomato Soup": 80, "Tost Omlete": 90, "Tost and Butter": 60, "Veg. Biryani": 170, "Veg. Chowmein (F)": 190, "Veg. Chowmein (H)": 110, "Veg. Cutlete": 160, "Veg. Fried Rice": 170, "Veg. Goli Kabab": 220, "Veg. Hot & Source Soup": 100, "Veg. Jhal Phrazy": 160, "Veg. Kofta Curry": 160, "Veg. Manchow Soup": 120, "Veg. Manchurian (F)": 170, "Veg. Manchurian (H)": 110, "Veg. Moglai Paratha": 120, "Veg. Navratan Kurma": 190, "Veg. Pulao": 150, "Veg. Raita": 130, "Veg. Raita (H)": 70, "Veg. Roll": 120, "Veg. Sandwich": 100, "Veg. Shahi Pulao": 190, "Veg. Stuff Naan": 120, "Veg. Stuff Paratha": 100, "Vegetable Chat-Patta": 160, "Vegetable Pakora": 160, "Water Bottle 20": 20
+            "Aloo Dam Banarsi": 180, "Aloo Dam Kashmiri": 190, "Aloo Do Payaza": 140, "Aloo Govi": 130, "Aloo Matar": 130, "Aloo Palak": 130, "Aloo Paneer": 150, "Aloo Paratha": 70, "Aloo Parwal": 130, "Baby Corn Crispry": 270, "Boondi Raita": 110, "Boondi Raita (H)": 70, "Butter Naan": 80, "Butter Roti": 15, "Chi. Butter Masala": 200, "Chi. Chilly (B) (F)": 230, "Chi. Chilly (B) (H)": 150, "Chi. Chilly (B/L) (F)": 290, "Chi. Chilly (B/L) (H)": 170, "Chi. Curry": 160, "Chi. Dehati (F)": 550, "Chi. Dehati (H)": 320, "Chi. Do Payaza": 180, "Chi. Estu": 190, "Chi. Fried Rice": 260, "Chi. Ginger Kabab": 260, "Chi. Goli Kabab": 260, "Chi. Karahi": 220, "Chi. Kasha (F)": 510, "Chi. Kurma": 210, "Chi. Leg Kabab": 280, "Chi. Lolliop (B/L) (F)": 310, "Chi. Manchurian": 280, "Chi. Masala": 200, "Chi. Moglai": 210, "Chi. Moglai Paratha": 190, "Chi. Murg Mussalam": 560, "Chi. Noorani": 230, "Chi. Pasanda": 220, "Chi. Reshmi Kabab": 280, "Chi. Shahi Kurma": 210, "Chi. Sone Spl. (F)": 570, "Chi. Sone Spl. (H)": 340, "Chi. Tandoori (F)": 450, "Chi. Tandoori (H)": 260, "Chi. Tikka": 270, "Chi. Tikka Butter Masala": 330, "Chicken Biryani": 220, "Chicken Chowmein": 270, "Chicken Cream Soup": 140, "Chicken Cutlete": 200, "Chicken Fry": 160, "Chicken Hot & Source Soup": 170, "Chicken Manchow Soup": 150, "Chicken Pakora": 260, "Chicken Pulao": 230, "Chicken Roll": 230, "Cholla Bhatura": 110, "Coffee": 45, "Curd": 80, "Dal Butter Fry": 130, "Dal Fry": 110, "Dal Makhani": 140, "Dal Moglai": 160, "Dal Tarka": 120, "Egg Biryani": 190, "Egg Bugiya": 80, "Egg Butter Masala": 140, "Egg Chowmein": 230, "Egg Do Payaza": 120, "Egg Fried Rice": 190, "Egg Masala": 150, "Egg Pakora": 160, "Egg. Curry": 110, "Egg. Roll": 150, "Finger Chips": 130, "Fish Curry": 150, "Fish Do Pyaza": 150, "Fish Estu": 160, "Fish Fry": 140, "Fish Masala": 160, "Fresh Paneer": 200, "Fruit Cream": 90, "Garlic Naan": 90, "Govi Pakora": 140, "Green Salad- L": 110, "Green Salad- S": 70, "Jeera Rice": 110, "Jeera Rice (H)": 70, "Jeera thanda 20": 20, "Kaju Paneer": 300, "Kalajamun": 25, "Khir": 80, "Malai Kofta": 210, "Masala Kulcha": 110, "Matar Paneer": 150, "Mix Chowmein": 260, "Mix Vegetable": 150, "Mix. Fried Rice": 270, "Mushroom (B) Masala": 230, "Mushroom (H)": 160, "Mushroom Chilly (F)": 250, "Mushroom Chilly (H)": 150, "Mushroom Chowmein": 250, "Mushroom Curry": 210, "Mushroom Dehati": 300, "Mushroom Dehati (H)": 160, "Mushroom Do Piyaza": 220, "Mushroom Estu": 220, "Mushroom Fried Rice": 250, "Mushroom Karahi": 240, "Mushroom Masala": 230, "Mutton Curry (4 Pic)": 300, "Mutton Do Pyaza (4 Pic)": 320, "Mutton Estu (2 Pic)": 220, "Mutton Spl. (12 Pic) F+H": 980, "Mutton Spl. (8 Pic)": 650, "Naan": 60, "Omlete": 60, "Omlete Curry": 120, "Onion Fry Rice": 120, "Onion Pakora": 150, "Palak Paneer": 170, "Paneer Bhujiya": 210, "Paneer Butter Masala": 200, "Paneer Chilly (F)": 220, "Paneer Chilly (H)": 140, "Paneer Chowmein": 240, "Paneer Dehati (F)": 290, "Paneer Dehati (H)": 160, "Paneer Diwani": 250, "Paneer Do Pyaza": 190, "Paneer Estu": 210, "Paneer Fried Rice": 250, "Paneer Goli Kabab": 250, "Paneer Karahi": 230, "Paneer Karahi (H)": 140, "Paneer Masala": 200, "Paneer Pakora": 240, "Paneer Paratha": 110, "Paneer Pasanda": 220, "Paneer Punjabi": 250, "Paneer Sandwich": 130, "Paneer Shahi Kurma": 230, "Paneer Stuff Naan": 140, "Paneer Stuff Paratha": 110, "Paneer Tikka": 250, "Paneer biryani": 240, "Pappad Masala": 120, "Peanut": 120, "Peanut Masala": 150, "Pease Pulao": 140, "Plain Dal": 90, "Plain Kulcha": 80, "Plain Rice": 100, "Plain Rice (H)": 60, "Rasgulla": 20, "Roti": 12, "Seasonal Veg. Bhujiya": 120, "Shahi Naan": 130, "Shahi Paneer": 210, "Shahi Paratha": 130, "Sone Shahi Paratha": 140, "Sone Special Pulao": 210, "Sone Spl. Paneer": 270, "Sone Spl. Paneer (F+H)": 430, "Sone Spl. Paneer Chat-Patta": 250, "Sone Spl. Veg.": 180, "Stuff Capssicam": 160, "Stuff Tomato": 160, "Sweet Corn Crispy": 110, "T. Paratha": 70, "Tawa Butter Roti": 12, "Tawa Roti": 10, "Tea Spl.": 20, "Thanda 40": 40, "Thanda 45": 45, "Thanda 50": 50, "Thanda 60": 60, "Thanda 90": 90, "Thanda 90 Coco cola": 90, "Thanda Bottle 30": 30, "Thanda Bottle 35": 35, "Tomato Soup": 80, "Tost Omlete": 90, "Tost and Butter": 60, "Veg. Biryani": 170, "Veg. Chowmein (F)": 190, "Veg. Chowmein (H)": 110, "Veg. Cutlete": 160, "Veg. Fried Rice": 170, "Veg. Goli Kabab": 220, "Veg. Hot & Source Soup": 100, "Veg. Jhal Phrazy": 160, "Veg. Kofta Curry": 160, "Veg. Manchow Soup": 120, "Veg. Manchurian (F)": 170, "Veg. Manchurian (H)": 110, "Veg. Moglai Paratha": 120, "Veg. Navratan Kurma": 190, "Veg. Pulao": 150, "Veg. Raita": 130, "Veg. Raita (H)": 70, "Veg. Roll": 120, "Veg. Sandwich": 100, "Veg. Shahi Pulao": 190, "Veg. Stuff Naan": 120, "Veg. Stuff Paratha": 100, "Vegetable Chat-Patta": 160, "Vegetable Pakora": 160, "Water Bottle 20": 20
         };
 
         let todayObj = new Date();
@@ -286,7 +288,6 @@
         let knownOrderIds = []; 
         let liveOrdersList = []; 
 
-        // TEXT TO SPEECH (VOICE NOTIFICATION)
         function speakText(text) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel(); 
@@ -340,7 +341,6 @@
             let pendingOrders = data.filter(o => o.order_status.includes('Checking') || o.order_status.includes('Pending'));
             let newlyAdded = pendingOrders.filter(o => !knownOrderIds.includes(o.order_id));
             
-            // Voice Notification for New Order
             if(!isManualRefresh && knownOrderIds.length > 0 && newlyAdded.length > 0) { 
                 let nameMsgRaw = newlyAdded[0].customer_name.split(' (UTR')[0].trim();
                 showToast(`New Order from ${nameMsgRaw}!`, false); 
@@ -358,7 +358,16 @@
                         <span>${order.order_id} ${isPending ? '<span class="new-badge">NEW</span>' : ''}</span>
                         <span style="color:var(--red);">₹${order.total_amount}</span>
                     </div>
-                    <div style="font-size:13px; color:#666; margin-top:5px;"><i class="fas fa-user"></i> ${order.customer_name} | <i class="fas fa-phone-alt"></i> ${order.phone}</div>
+                    
+                    <!-- NEW UPDATE: CALL BUTTON INCLUDED -->
+                    <div style="font-size:13px; color:#666; margin-top:5px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <i class="fas fa-user"></i> ${order.customer_name} <br> 
+                            <i class="fas fa-phone-alt" style="margin-top:5px;"></i> ${order.phone}
+                        </div>
+                        <a href="tel:${order.phone}" class="call-btn"><i class="fas fa-phone-volume"></i> Call</a>
+                    </div>
+                    
                     <div style="font-size:14px; color:#444; background:#f9f9f9; padding:10px; border-radius:8px; margin:10px 0;">${itemsHtml}</div>
                     <div style="font-size:13px; font-weight:700; color:${isPending ? 'var(--orange)' : 'var(--green)'};">Status: ${order.order_status}</div>
                     <div style="display:flex; gap:10px; margin-top:10px;">
@@ -372,7 +381,7 @@
         async function acceptOrder(orderId) { 
             await supabaseClient.from('customer_orders').update({ order_status: 'Accepted ✅' }).eq('order_id', orderId); 
             showToast(`Order ${orderId} Accepted!`); 
-            speakText(`Order accept ho gaya hai`); // Voice Note
+            speakText(`Order accept ho gaya hai`); 
             fetchLiveOrders(true); 
         }
         
@@ -499,7 +508,6 @@
             let filteredTrash = trash.filter(b => b.date === targetDate);
             if (filteredTrash.length === 0) { tb.innerHTML = "<tr><td colspan='3' style='text-align:center; color: #888;'>Recycle bin empty for this date.</td></tr>"; return; }
             
-            // Fixed Sorting & ID display for both POS & Online
             filteredTrash.sort((a, b) => b.id - a.id).forEach(b => { 
                 let displayId = b.isOnline ? `${b.billNo}` : `#${b.billNo}`;
                 tb.innerHTML += `<tr><td><b>${displayId}</b></td><td>₹${b.total}</td><td style="display:flex; gap:10px;"><button onclick="restoreBill('${b.id}')" style="background:var(--green);color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;" title="Restore"><i class="fas fa-undo"></i></button><button onclick="deleteForever('${b.id}')" style="background:#555;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;" title="Delete Forever"><i class="fas fa-times"></i></button></td></tr>`; 
@@ -576,6 +584,48 @@
         
         function exportBackup() { let data = { bills: JSON.parse(localStorage.getItem('sone_bills_isolated'))||[], trash: JSON.parse(localStorage.getItem('sone_bills_trash'))||[] }; let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data)); let link = document.createElement('a'); link.href = dataStr; link.download = `Sone_Backup_${displayDate.replace(/\//g, '-')}.json`; link.click(); showToast("Backup Downloaded!", false); }
         function importBackup() { let fileInput = document.getElementById('importFile'); if(!fileInput.files.length) return; let reader = new FileReader(); reader.onload = function(e) { try { let data = JSON.parse(e.target.result); if(data.bills) localStorage.setItem('sone_bills_isolated', JSON.stringify(data.bills)); if(data.trash) localStorage.setItem('sone_bills_trash', JSON.stringify(data.trash)); showToast("Data Restored!", false); setTimeout(()=>location.reload(), 1000); } catch(err) { alert("Invalid file."); } }; reader.readAsText(fileInput.files[0]); }
+    </script>
+    
+    <!-- PWA INSTALL & AUTO UPDATE SCRIPT -->
+    <script>
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => { 
+            e.preventDefault(); deferredPrompt = e; 
+            document.getElementById('installAppContainer').style.display = 'block'; 
+        });
+
+        function installAdminApp() { 
+            if (deferredPrompt) { 
+                deferredPrompt.prompt(); 
+                deferredPrompt.userChoice.then((choiceResult) => { 
+                    if (choiceResult.outcome === 'accepted') document.getElementById('installAppContainer').style.display = 'none'; 
+                    deferredPrompt = null; 
+                }); 
+            } 
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(registration => {
+                    registration.update();
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showToast("App ka naya version update ho raha hai...", false);
+                                setTimeout(() => newWorker.postMessage({ action: 'skipWaiting' }), 1500);
+                            }
+                        });
+                    });
+                });
+                let refreshing;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (refreshing) return;
+                    refreshing = true;
+                    window.location.reload(true); 
+                });
+            });
+        }
     </script>
 </body>
 </html>
