@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sone Admin & POS</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="sonelogo1.png">
+    <link rel="icon" type="image/png" href="sonelogo.png">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -76,11 +76,10 @@
 <body>
     <div id="notification-toast"><i class="fas fa-check-circle"></i> <span id="toast-message">Success!</span></div>
 
-    <!-- LOGIN SCREEN -->
     <div id="login-screen">
         <div class="login-overlay"></div>
         <div class="login-box">
-            <img src="sonelogo1.png" alt="Sone Logo" class="login-logo">
+            <img src="sonelogo.png" alt="Sone Logo" class="login-logo">
             <p style="color:#333; font-weight:800; font-size:20px; margin-top:0; font-family:'Montserrat';">ADMIN DASHBOARD</p>
             <div style="position: relative;">
                 <i class="fas fa-envelope" style="position: absolute; left: 16px; top: 22px; transform: translateY(-50%); color: #8E8E93;"></i>
@@ -96,7 +95,6 @@
     </div>
 
     <div id="app-container">
-        <!-- SIDEBAR -->
         <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
         <div class="sidebar" id="sidebar">
             <div style="padding: 30px 20px; text-align: center; border-bottom: 1px solid #eee; background: #fafafa;">
@@ -116,7 +114,7 @@
 
         <div class="top-header">
             <button onclick="toggleSidebar()" style="background:transparent; border:none; font-size:24px; color:#1C1C1E; cursor:pointer;"><i class="fas fa-bars"></i></button>
-            <img src="sonelogo1.png" alt="Sone Restaurant" class="center-logo">
+            <img src="sonelogo.png" alt="Sone Restaurant" class="center-logo">
             <div style="font-size:12px; font-weight:700; color:#b31217;" id="displayDate"></div>
         </div>
 
@@ -286,27 +284,27 @@
 
         let menuData = {}; let itemNames = []; let billItems = []; let billCounter = 1; let currentPreviewBill = null;
         let knownOrderIds = []; 
-        let liveOrdersList = []; // Global list to help with recycle bin
+        let liveOrdersList = []; 
 
-        // SOUND & TOAST LOGIC
-        const notifSound = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-        function playNotificationSound() {
-            notifSound.play().catch(err => console.log("User interaction required for sound."));
+        // TEXT TO SPEECH (VOICE NOTIFICATION)
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); 
+                let msg = new SpeechSynthesisUtterance();
+                msg.text = text;
+                msg.lang = 'hi-IN'; 
+                msg.rate = 0.9;
+                window.speechSynthesis.speak(msg);
+            }
         }
 
-        function showToast(msg, isError = false, playSound = true) {
+        function showToast(msg, isError = false) {
             let t = document.getElementById('notification-toast');
             if(isError) { t.classList.add('error'); t.innerHTML = `<i class="fas fa-exclamation-circle"></i> <span id="toast-message">${msg}</span>`; } 
             else { t.classList.remove('error'); t.innerHTML = `<i class="fas fa-check-circle"></i> <span id="toast-message">${msg}</span>`; }
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 4000);
-            if(playSound) playNotificationSound();
         }
-
-        document.body.addEventListener('click', function initAudio() {
-            notifSound.play().then(() => { notifSound.pause(); notifSound.currentTime = 0; }).catch(()=>{});
-            document.body.removeEventListener('click', initAudio);
-        }, { once: true });
 
         window.onload = async function() {
             const { data } = await supabaseClient.auth.getSession();
@@ -337,15 +335,16 @@
             let container = document.getElementById('ordersContainer');
             if (error || data.length === 0) { container.innerHTML = "<div style='text-align:center; padding:30px; color:#888;'>No new orders found.</div>"; return; }
             
-            liveOrdersList = data; // store globally for trash logic
+            liveOrdersList = data; 
             
             let pendingOrders = data.filter(o => o.order_status.includes('Checking') || o.order_status.includes('Pending'));
             let newlyAdded = pendingOrders.filter(o => !knownOrderIds.includes(o.order_id));
             
+            // Voice Notification for New Order
             if(!isManualRefresh && knownOrderIds.length > 0 && newlyAdded.length > 0) { 
-                let nameMsg = newlyAdded[0].customer_name;
-                if(newlyAdded.length > 1) nameMsg += ` & ${newlyAdded.length - 1} aur`;
-                showToast(`New Order from ${nameMsg}!`, false, true); 
+                let nameMsgRaw = newlyAdded[0].customer_name.split(' (UTR')[0].trim();
+                showToast(`New Order from ${nameMsgRaw}!`, false); 
+                speakText(`Naya order aaya hai, ${nameMsgRaw} ka`);
             }
             knownOrderIds = pendingOrders.map(o => o.order_id);
 
@@ -370,36 +369,29 @@
             });
         }
         
-        async function acceptOrder(orderId) { await supabaseClient.from('customer_orders').update({ order_status: 'Accepted ✅' }).eq('order_id', orderId); showToast(`Order ${orderId} Accepted!`); fetchLiveOrders(true); }
+        async function acceptOrder(orderId) { 
+            await supabaseClient.from('customer_orders').update({ order_status: 'Accepted ✅' }).eq('order_id', orderId); 
+            showToast(`Order ${orderId} Accepted!`); 
+            speakText(`Order accept ho gaya hai`); // Voice Note
+            fetchLiveOrders(true); 
+        }
         
-        // UPDATED: Move Online Order to Recycle Bin
         async function deleteOnlineOrder(orderId) { 
             if(confirm("Delete this online order? (It will move to Recycle Bin)")) { 
                 let order = liveOrdersList.find(o => o.order_id === orderId);
                 if(order) {
                     let trash = JSON.parse(localStorage.getItem('sone_bills_trash')) || [];
-                    let trashItem = {
-                        id: order.id, 
-                        billNo: order.order_id, 
-                        date: displayDate,
-                        total: order.total_amount,
-                        items: order.items_json,
-                        custName: order.customer_name,
-                        isOnline: true,
-                        rawOrder: order 
-                    };
+                    let trashItem = { id: order.id, billNo: order.order_id, date: displayDate, total: order.total_amount, items: order.items_json, custName: order.customer_name, isOnline: true, rawOrder: order };
                     trash.push(trashItem);
                     localStorage.setItem('sone_bills_trash', JSON.stringify(trash));
-                    
                     await supabaseClient.from('customer_orders').delete().eq('order_id', orderId); 
-                    showToast("Online Order Moved to Recycle Bin!", true, false); 
+                    showToast("Order Moved to Recycle Bin!", true); 
                     fetchLiveOrders(true); 
                 }
             } 
         }
         setInterval(() => fetchLiveOrders(false), 10000);
 
-        // Billing Logic
         const input = document.getElementById("itemInput"), list = document.getElementById("autocompleteList");
         input.addEventListener("input", function() {
             list.innerHTML = ""; document.getElementById("priceInput").value = "";
@@ -423,14 +415,14 @@
             if (isHalf && !n.includes("(H)")) { finalPrice = Math.round(p / 2); finalName = n + " (Half)"; } else if (isFullHalf) { finalPrice = p + Math.round(p / 2); finalName = n + " (F+H)"; }
             let totalAmount = finalPrice * q, idx = billItems.findIndex(i => i.name === finalName && i.price === finalPrice);
             if(idx > -1) { billItems[idx].qty += q; billItems[idx].total = billItems[idx].qty * billItems[idx].price; } else { billItems.push({name: finalName, price: finalPrice, qty: q, total: totalAmount}); }
-            updateBillDisplay(); showToast("Added to Bill", false, false); document.getElementById("itemInput").value=""; document.getElementById("priceInput").value=""; document.getElementById("qtyInput").value="1";
+            updateBillDisplay(); showToast("Added to Bill", false); document.getElementById("itemInput").value=""; document.getElementById("priceInput").value=""; document.getElementById("qtyInput").value="1";
         }
         function updateBillDisplay() {
             let tb = document.getElementById("billBody"); tb.innerHTML = ""; let gt = 0;
             billItems.forEach((i, idx) => { gt += i.total; tb.innerHTML += `<tr><td>${i.name}</td><td>${i.qty}</td><td style="font-weight:bold;">${i.total}</td><td style="text-align:center;"><button onclick="billItems.splice(${idx},1);updateBillDisplay();" style="background:var(--red);color:white;border:none;padding:5px 8px;border-radius:6px;cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`; });
             document.getElementById("grandTotal").innerText = gt;
         }
-        function clearBill() { if(confirm("Clear current order?")) { billItems = []; updateBillDisplay(); showToast("Bill Cleared!", true, false); } }
+        function clearBill() { if(confirm("Clear current order?")) { billItems = []; updateBillDisplay(); showToast("Bill Cleared!", true); } }
 
         function openCheckoutModal() {
             if(billItems.length === 0) return alert("Bill khali hai!");
@@ -452,7 +444,7 @@
             let nB = { id: Date.now(), billNo: finalUserBillNo, date: displayDate, time: new Date().toLocaleTimeString('en-US'), items: JSON.parse(JSON.stringify(billItems)), total: gt, paid: cash+online, disc: disc, udhaar: (gt - disc - cash - online)>0?(gt - disc - cash - online):0, custName: name, isOnline: false };
             let sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || []; sb.push(nB); localStorage.setItem('sone_bills_isolated', JSON.stringify(sb));
             
-            showToast(`Bill #${finalUserBillNo} Saved!`, false, true);
+            showToast(`Bill #${finalUserBillNo} Saved!`, false);
             try { await supabaseClient.from('pos_bills').insert([nB]); } catch(e){}
             
             document.getElementById('print-area').innerHTML = getBillHTML(nB); document.getElementById('checkoutModal').style.display = 'none';
@@ -470,7 +462,6 @@
             html += `<div style="display:flex; justify-content:space-between; font-size:16px; margin-top:10px; border-top:2px dashed #000; padding-top:10px;"><span>GRAND TOTAL</span><span>₹ ${b.total - b.disc}</span></div></div><div style="text-align:center; font-size:12px; margin-top:20px;">Thank You! Visit Again.</div></div>`; return html;
         }
 
-        // History and Recycle Bin Logic
         function getFormattedDateStr(isoString) {
             if(!isoString) return displayDate;
             let parts = isoString.split('-'); return `${parts[2]}/${parts[1]}/${parts[0]}`; 
@@ -495,7 +486,7 @@
                 if(bill) { 
                     trash.push(bill); localStorage.setItem('sone_bills_trash', JSON.stringify(trash)); 
                     localStorage.setItem('sone_bills_isolated', JSON.stringify(sb.filter(b=>b.id!==id))); 
-                    showToast("Moved to Recycle Bin!", true, false);
+                    showToast("Moved to Recycle Bin!", true);
                     loadHistory(); 
                 }
             } 
@@ -515,7 +506,6 @@
             }); 
         }
 
-        // UPDATED: Restore Both Online & POS
         async function restoreBill(id) { 
             let trash = JSON.parse(localStorage.getItem('sone_bills_trash')) || []; 
             let sb = JSON.parse(localStorage.getItem('sone_bills_isolated')) || []; 
@@ -523,10 +513,10 @@
             
             if(bill) { 
                 if(bill.isOnline) {
-                    try { await supabaseClient.from('customer_orders').insert([bill.rawOrder]); showToast("Online Order Restored!", false, true); fetchLiveOrders(true); } catch(e){}
+                    try { await supabaseClient.from('customer_orders').insert([bill.rawOrder]); showToast("Online Order Restored!", false); fetchLiveOrders(true); } catch(e){}
                 } else {
                     sb.push(bill); localStorage.setItem('sone_bills_isolated', JSON.stringify(sb)); 
-                    showToast("POS Bill Restored!", false, false); loadHistory(); updateBillNo();
+                    showToast("POS Bill Restored!", false); loadHistory(); updateBillNo();
                 }
                 localStorage.setItem('sone_bills_trash', JSON.stringify(trash.filter(b=>String(b.id)!==String(id)))); 
                 loadTrash(); 
@@ -537,7 +527,7 @@
             if(confirm("Delete this bill FOREVER? This cannot be undone!")) {
                 let trash = JSON.parse(localStorage.getItem('sone_bills_trash')) || []; 
                 localStorage.setItem('sone_bills_trash', JSON.stringify(trash.filter(b=>String(b.id)!==String(id)))); 
-                showToast("Permanently Deleted", true, false);
+                showToast("Permanently Deleted", true);
                 loadTrash(); 
             }
         }
@@ -555,12 +545,11 @@
                 trash.push(currentPreviewBill); localStorage.setItem('sone_bills_trash', JSON.stringify(trash)); 
                 localStorage.setItem('sone_bills_isolated', JSON.stringify(sb.filter(b=>b.id!==currentPreviewBill.id)));
                 
-                updateBillDisplay(); closePreviewModal(); showToast("Bill loaded for editing.", false, false);
+                updateBillDisplay(); closePreviewModal(); showToast("Bill loaded for editing.", false);
                 openTab('billingTab', document.querySelector('.nav-links a:nth-child(2)')); 
             } 
         }
 
-        // PERMANENT MENU RESTORE & SYNC LOGIC
         async function fetchAdminMenu() {
             const { data, error } = await supabaseClient.from('app_menu').select('*');
             if(data && !error && data.length > 0) { 
@@ -581,12 +570,12 @@
             }); 
         }
         function editMenu(name, price) { document.getElementById("newMenuName").value = name; document.getElementById("newMenuPrice").value = price; window.scrollTo(0,0); }
-        async function saveMenuItem() { let name = document.getElementById("newMenuName").value.trim(), price = parseFloat(document.getElementById("newMenuPrice").value); if(name && price) { await supabaseClient.from('app_menu').upsert({ item_name: name, price: price }); showToast("Menu Updated to Cloud!", false, true); fetchAdminMenu(); document.getElementById("newMenuName").value = ""; document.getElementById("newMenuPrice").value = ""; } }
-        async function deleteMenuItem(name) { if(confirm(`Delete "${name}" permanently?`)) { await supabaseClient.from('app_menu').delete().eq('item_name', name); showToast("Item Deleted!", true, true); fetchAdminMenu(); } }
+        async function saveMenuItem() { let name = document.getElementById("newMenuName").value.trim(), price = parseFloat(document.getElementById("newMenuPrice").value); if(name && price) { await supabaseClient.from('app_menu').upsert({ item_name: name, price: price }); showToast("Menu Updated to Cloud!", false); fetchAdminMenu(); document.getElementById("newMenuName").value = ""; document.getElementById("newMenuPrice").value = ""; } }
+        async function deleteMenuItem(name) { if(confirm(`Delete "${name}" permanently?`)) { await supabaseClient.from('app_menu').delete().eq('item_name', name); showToast("Item Deleted!", true); fetchAdminMenu(); } }
         function filterMenuTable() { let input = document.getElementById("searchMenu").value.toUpperCase(), trs = document.getElementById("menuUpdateBody").getElementsByTagName("tr"); for (let i = 0; i < trs.length; i++) { let td = trs[i].getElementsByTagName("td")[0]; if (td) { trs[i].style.display = (td.innerText.toUpperCase().indexOf(input) > -1) ? "" : "none"; } } }
         
-        function exportBackup() { let data = { bills: JSON.parse(localStorage.getItem('sone_bills_isolated'))||[], trash: JSON.parse(localStorage.getItem('sone_bills_trash'))||[] }; let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data)); let link = document.createElement('a'); link.href = dataStr; link.download = `Sone_Backup_${displayDate.replace(/\//g, '-')}.json`; link.click(); showToast("Backup Downloaded!", false, true); }
-        function importBackup() { let fileInput = document.getElementById('importFile'); if(!fileInput.files.length) return; let reader = new FileReader(); reader.onload = function(e) { try { let data = JSON.parse(e.target.result); if(data.bills) localStorage.setItem('sone_bills_isolated', JSON.stringify(data.bills)); if(data.trash) localStorage.setItem('sone_bills_trash', JSON.stringify(data.trash)); showToast("Data Restored!", false, true); setTimeout(()=>location.reload(), 1000); } catch(err) { alert("Invalid file."); } }; reader.readAsText(fileInput.files[0]); }
+        function exportBackup() { let data = { bills: JSON.parse(localStorage.getItem('sone_bills_isolated'))||[], trash: JSON.parse(localStorage.getItem('sone_bills_trash'))||[] }; let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data)); let link = document.createElement('a'); link.href = dataStr; link.download = `Sone_Backup_${displayDate.replace(/\//g, '-')}.json`; link.click(); showToast("Backup Downloaded!", false); }
+        function importBackup() { let fileInput = document.getElementById('importFile'); if(!fileInput.files.length) return; let reader = new FileReader(); reader.onload = function(e) { try { let data = JSON.parse(e.target.result); if(data.bills) localStorage.setItem('sone_bills_isolated', JSON.stringify(data.bills)); if(data.trash) localStorage.setItem('sone_bills_trash', JSON.stringify(data.trash)); showToast("Data Restored!", false); setTimeout(()=>location.reload(), 1000); } catch(err) { alert("Invalid file."); } }; reader.readAsText(fileInput.files[0]); }
     </script>
 </body>
 </html>
