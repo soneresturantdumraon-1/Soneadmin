@@ -2,7 +2,7 @@
   "name": "Sone Admin & POS",
   "short_name": "Sone Admin",
   "description": "Admin Dashboard for Sone Restaurant",
-  "start_url": "./index (3).html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F2F2F7",
   "theme_color": "#b31217",
