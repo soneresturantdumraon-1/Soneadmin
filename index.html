@@ -240,6 +240,7 @@
             </div>
         </div>
 
+        <!-- Modals -->
         <div id="checkoutModal" class="modal">
             <div class="modal-content">
                 <h3 style="margin: 0 0 10px 0; text-align: center;">Complete Payment</h3>
@@ -274,6 +275,7 @@
     </div>
 
     <script>
+        // SUPABASE KEYS
         const SUPABASE_URL = 'https://gvsimqxwfuugugssvcus.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2c2ltcXh3ZnV1Z3Vnc3N2Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3NTcwOTUsImV4cCI6MjEwNjMzMzA5NX0.b1aIHuURJ4jqy7T9ulzzD9e5O7fjTcuer0_QhPlZTKk'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -294,6 +296,7 @@
         let liveOrdersList = []; 
         let adminNotifiedOrders = JSON.parse(localStorage.getItem('sone_admin_notified')) || [];
 
+        // Audio Unlocker Fix
         document.body.addEventListener('click', function unlockAudio() {
             let silent = new SpeechSynthesisUtterance(''); window.speechSynthesis.speak(silent);
             document.body.removeEventListener('click', unlockAudio);
@@ -544,7 +547,7 @@
         async function fetchAdminMenu() {
             const { data, error } = await supabaseClient.from('app_menu').select('*');
             if(data && !error && data.length > 0) { menuData = {}; data.forEach(item => { menuData[item.item_name] = item.price; }); } 
-            else { menuData = JSON.parse(JSON.stringify(PERMANENT_MENU)); try{ await supabaseClient.from('app_menu').insert(Object.keys(PERMANENT_MENU).map(key => ({ item_name: key, price: PERMANENT_MENU[key] }))); }catch(e){} }
+            else { menuData = {"Aloo Dam Banarsi": 180, "Aloo Paratha": 70, "Chicken Biryani": 220}; } // Demo default
             itemNames = Object.keys(menuData); renderMenuUpdateTable();
         }
         function renderMenuUpdateTable() { let tb = document.getElementById("menuUpdateBody"); tb.innerHTML = ""; Object.keys(menuData).sort().forEach(k => { tb.innerHTML += `<tr><td>${k}</td><td style="font-weight:bold; color:var(--green);">₹${menuData[k]}</td><td style="display:flex; gap:5px; justify-content:center;"><button onclick="editMenu('${k.replace(/'/g, "\\'")}', ${menuData[k]})" style="background:var(--blue);color:white;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-edit"></i></button><button onclick="deleteMenuItem('${k.replace(/'/g, "\\'")}')" style="background:var(--red);color:white;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-trash"></i></button></td></tr>`; }); }
@@ -558,36 +561,29 @@
     
     <!-- PWA & FIREBASE INIT SCRIPT -->
     <script>
-        // --------------------------------------------------------
-        // PASTE YOUR FIREBASE CONFIGURATION HERE FOR PUSH NOTIFICATIONS
-        // (You get this from Firebase Console -> Project Settings)
-        // --------------------------------------------------------
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+          apiKey: "AIzaSyAJWHNvyuKt9yYoqfiz3NqjMZZQ92-Y348",
+          authDomain: "sone-restaurant.firebaseapp.com",
+          projectId: "sone-restaurant",
+          storageBucket: "sone-restaurant.firebasestorage.app",
+          messagingSenderId: "422050209675",
+          appId: "1:422050209675:web:bec7cbc69d14467c4b598e"
         };
-        // Initialize Firebase ONLY IF config is updated
-        if(firebaseConfig.apiKey !== "YOUR_API_KEY") {
-            firebase.initializeApp(firebaseConfig);
-            const messaging = firebase.messaging();
-            
-            messaging.requestPermission().then(() => {
-                return messaging.getToken();
-            }).then((token) => {
-                console.log('Admin Firebase Token:', token);
-                // Optionally save this token to Supabase so backend can send messages to it
-            }).catch((err) => { console.log('Firebase Permission Error', err); });
+        
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+        
+        messaging.requestPermission().then(() => {
+            return messaging.getToken();
+        }).then((token) => {
+            console.log('Admin Firebase Token:', token);
+        }).catch((err) => { console.log('Firebase Permission Error', err); });
 
-            messaging.onMessage((payload) => {
-                console.log('Message received. ', payload);
-                showToast(payload.notification.title, false);
-                speakText(payload.notification.body);
-            });
-        }
+        messaging.onMessage((payload) => {
+            console.log('Message received. ', payload);
+            showToast(payload.notification.title, false);
+            speakText(payload.notification.body);
+        });
 
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => { 
@@ -607,7 +603,7 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(registration => {
+                navigator.serviceWorker.register('firebase-messaging-sw.js').then(registration => {
                     registration.update();
                     registration.addEventListener('updatefound', () => {
                         const newWorker = registration.installing;
