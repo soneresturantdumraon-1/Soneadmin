@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- FIREBASE SDK FOR NOTIFICATIONS -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging-compat.js"></script>
     <style>
         :root { --bg: #F2F2F7; --card: #FFFFFF; --text: #1C1C1E; --text-muted: #8E8E93; --orange: #FF9500; --green: #34C759; --red: #FF3B30; --blue: #007AFF; --input-bg: rgba(118, 118, 128, 0.12); --separator: rgba(60, 60, 67, 0.1); --radius: 16px; --shadow: 0 4px 14px rgba(0,0,0,0.05); }
         body { font-family: 'Poppins', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden;}
@@ -111,7 +114,6 @@
                 <li><a onclick="openTab('menuUpdateTab', this)"><i class="fas fa-edit" style="margin-right:15px; width:20px;"></i> Menu Update</a></li>
                 <li><a onclick="openTab('recycleBinTab', this)"><i class="fas fa-trash-restore" style="margin-right:15px; width:20px;"></i> Recycle Bin</a></li>
                 <li><a onclick="openTab('backupRestoreTab', this)"><i class="fas fa-cloud-download-alt" style="margin-right:15px; width:20px;"></i> Data Backup</a></li>
-                <!-- PWA INSTALL BUTTON RESTORED -->
                 <li id="installAppContainer" style="display:none; margin-top:10px;"><a onclick="installAdminApp()" style="background:var(--green); color:white;"><i class="fas fa-download" style="margin-right:15px;"></i> Install App</a></li>
                 <li style="margin-top:20px;"><a onclick="logoutUser()" style="color:var(--red);"><i class="fas fa-sign-out-alt" style="margin-right:15px; width:20px;"></i> Logout</a></li>
             </ul>
@@ -238,7 +240,6 @@
             </div>
         </div>
 
-        <!-- Modals -->
         <div id="checkoutModal" class="modal">
             <div class="modal-content">
                 <h3 style="margin: 0 0 10px 0; text-align: center;">Complete Payment</h3>
@@ -291,11 +292,8 @@
 
         let menuData = {}; let itemNames = []; let billItems = []; let billCounter = 1; let currentPreviewBill = null;
         let liveOrdersList = []; 
-
-        // SMART CATCH-UP NOTIFICATION LOGIC (For when app is opened after being closed)
         let adminNotifiedOrders = JSON.parse(localStorage.getItem('sone_admin_notified')) || [];
 
-        // Audio Unlocker Policy Fix
         document.body.addEventListener('click', function unlockAudio() {
             let silent = new SpeechSynthesisUtterance(''); window.speechSynthesis.speak(silent);
             document.body.removeEventListener('click', unlockAudio);
@@ -362,7 +360,7 @@
             let selectedDateIso = document.getElementById('liveFilterDate').value;
             let filteredData = data.filter(order => {
                 let isPending = order.order_status.includes('Pending') || order.order_status.includes('Checking');
-                if(isPending) return true; // Hamesha pending dikhaye
+                if(isPending) return true; 
                 if(selectedDateIso && order.created_at) { return order.created_at.startsWith(selectedDateIso); }
                 return true;
             });
@@ -370,12 +368,10 @@
             if(filteredData.length === 0) { container.innerHTML = "<div style='text-align:center; padding:30px; color:#888;'>No orders found for this date.</div>"; return; }
             liveOrdersList = filteredData; 
             
-            // SMART CATCH-UP NOTIFICATION (Works if app was closed, or while open)
             let pendingOrders = filteredData.filter(o => o.order_status.includes('Checking') || o.order_status.includes('Pending'));
             let newUnnotified = pendingOrders.filter(o => !adminNotifiedOrders.includes(o.order_id));
             
             if (newUnnotified.length > 0) {
-                // Play notification for each missed/new order
                 newUnnotified.forEach((o, index) => {
                     setTimeout(() => {
                         let nameMsgRaw = o.customer_name.split(' (UTR')[0].trim();
@@ -383,7 +379,7 @@
                         speakText(`Naya order aaya hai, ${nameMsgRaw} ji ka`);
                         adminNotifiedOrders.push(o.order_id);
                         localStorage.setItem('sone_admin_notified', JSON.stringify(adminNotifiedOrders));
-                    }, index * 4000); // Delay multiple notifications by 4 sec each
+                    }, index * 4000); 
                 });
             }
 
@@ -430,7 +426,7 @@
         }
         setInterval(() => fetchLiveOrders(false), 8000); 
 
-        // -- POS SYSTEM LOGIC --
+        // POS LOGIC
         const input = document.getElementById("itemInput"), list = document.getElementById("autocompleteList");
         input.addEventListener("input", function() {
             list.innerHTML = ""; document.getElementById("priceInput").value = "";
@@ -560,8 +556,39 @@
         function importBackup() { let fileInput = document.getElementById('importFile'); if(!fileInput.files.length) return; let reader = new FileReader(); reader.onload = function(e) { try { let data = JSON.parse(e.target.result); if(data.bills) localStorage.setItem('sone_bills_isolated', JSON.stringify(data.bills)); if(data.trash) localStorage.setItem('sone_bills_trash', JSON.stringify(data.trash)); showToast("Data Restored!", false); setTimeout(()=>location.reload(), 1000); } catch(err) { alert("Invalid file."); } }; reader.readAsText(fileInput.files[0]); }
     </script>
     
-    <!-- PWA INSTALL & AUTO UPDATE SCRIPT -->
+    <!-- PWA & FIREBASE INIT SCRIPT -->
     <script>
+        // --------------------------------------------------------
+        // PASTE YOUR FIREBASE CONFIGURATION HERE FOR PUSH NOTIFICATIONS
+        // (You get this from Firebase Console -> Project Settings)
+        // --------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        // Initialize Firebase ONLY IF config is updated
+        if(firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(firebaseConfig);
+            const messaging = firebase.messaging();
+            
+            messaging.requestPermission().then(() => {
+                return messaging.getToken();
+            }).then((token) => {
+                console.log('Admin Firebase Token:', token);
+                // Optionally save this token to Supabase so backend can send messages to it
+            }).catch((err) => { console.log('Firebase Permission Error', err); });
+
+            messaging.onMessage((payload) => {
+                console.log('Message received. ', payload);
+                showToast(payload.notification.title, false);
+                speakText(payload.notification.body);
+            });
+        }
+
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => { 
             e.preventDefault(); deferredPrompt = e; 
