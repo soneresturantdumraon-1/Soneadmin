@@ -3,7 +3,7 @@
   const C = window.SONE_CONFIG;
   ['t1:home', 't2:list', 't3:receipt', 't4:fork', 't5:more'].forEach(s => { const [i, n] = s.split(':'); $('#' + i).innerHTML = ICON[n]; });
   $('#today-str').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
-  window.Owner = { SET: {}, tab: null };
+  window.Owner = Object.assign(window.Owner || {}, { SET: {}, tab: null });
   let SALES = [];                 // pos_sales (last 7 days)
   let ofilter = 'all';
 
@@ -95,6 +95,7 @@
       <div class="list">
         <button class="li chev" data-m="settings" style="width:100%;text-align:left"><span class="grow t">⚙️ Delivery, minimum order, UPI</span></button>
         <button class="li chev" data-m="staff" style="width:100%;text-align:left"><span class="grow t">👥 Staff (waiter) accounts</span></button>
+        <button class="li chev" data-m="seed" style="width:100%;text-align:left"><span class="grow t">📥 Poora menu load karein (211 items)</span></button>
         <button class="li chev" data-m="udhaar" style="width:100%;text-align:left"><span class="grow t">📒 Udhaar (baaki payment)</span></button>
         <button class="li chev" data-m="export" style="width:100%;text-align:left"><span class="grow t">📤 Hisaab download (CSV)</span></button>
       </div>
@@ -108,7 +109,7 @@
   }
   $('#more').onclick = e => {
     const b = e.target.closest('[data-m]'); if (!b) return; const m = b.dataset.m;
-    if (m === 'settings') settingsSheet(); if (m === 'staff') staffSheet(); if (m === 'udhaar') udhaarSheet(); if (m === 'export') exportSheet();
+    if (m === 'settings') settingsSheet(); if (m === 'staff') staffSheet(); if (m === 'udhaar') udhaarSheet(); if (m === 'seed') Owner.importMenu(); if (m === 'export') exportSheet();
     if (m === 'test') { chime(2); speak('Naya order aaya hai'); } if (m === 'logout') Staff.logout();
   };
   document.addEventListener('change', e => { if (e.target.id === 'sw-snd') ls.set('sone_mute', !e.target.checked); });
@@ -121,6 +122,8 @@
         <label class="field"><span>Delivery fee (₹)</span><input class="inp" id="s-fee" type="number" inputmode="decimal" value="${v('delivery_fee', 30)}"></label>
         <label class="field"><span>Is amount se upar delivery FREE (₹) — 0 = kabhi nahi</span><input class="inp" id="s-free" type="number" inputmode="decimal" value="${v('free_delivery_above', 500)}"></label>
         <label class="field"><span>Delivery ke liye minimum order (₹)</span><input class="inp" id="s-min" type="number" inputmode="decimal" value="${v('min_order', 100)}"></label>
+        <label class="field"><span>Timing (customer ko dikhega)</span><input class="inp" id="s-hrs" value="${esc(v('open_hours', '12:00 PM - 9:00 PM'))}"></label>
+        <label class="field"><span>Delivery area (km)</span><input class="inp" id="s-km" type="number" inputmode="decimal" value="${v('delivery_km', 5)}"></label>
         <label class="field"><span>UPI ID</span><input class="inp" id="s-upi" autocapitalize="off" value="${esc(v('upi_id', ''))}"></label>
         <label class="field" style="margin:0"><span>UPI par dikhne wala naam</span><input class="inp" id="s-upin" value="${esc(v('upi_name', 'Sone Restaurant'))}"></label></div>
       <p class="xs muted pad">Dhyan dein: customer app ka QR image (qr.png) alag hai. UPI ID badalne par qr.png bhi nayi se badlein.</p></div>
@@ -128,7 +131,7 @@
     $('#s-save', sh.el).onclick = async () => {
       const n = id => Math.max(0, Number($(id, sh.el).value) || 0), upi = $('#s-upi', sh.el).value.trim();
       if (!/^[\w.\-]{2,}@[\w.\-]{2,}$/.test(upi)) return toast('UPI ID sahi likhein (jaise name@bank)', 'err');
-      if (await Owner.saveSettings({ delivery_enabled: $('#s-del', sh.el).checked, delivery_fee: n('#s-fee'), free_delivery_above: n('#s-free'), min_order: n('#s-min'), upi_id: upi, upi_name: $('#s-upin', sh.el).value.trim() || 'Sone Restaurant' })) { toast('Settings save ho gayi ✓', 'ok'); sh.close(); }
+      if (await Owner.saveSettings({ delivery_enabled: $('#s-del', sh.el).checked, delivery_fee: n('#s-fee'), free_delivery_above: n('#s-free'), min_order: n('#s-min'), open_hours: $('#s-hrs', sh.el).value.trim() || '12:00 PM - 9:00 PM', delivery_km: n('#s-km'), upi_id: upi, upi_name: $('#s-upin', sh.el).value.trim() || 'Sone Restaurant' })) { toast('Settings save ho gayi ✓', 'ok'); sh.close(); }
     };
   }
 

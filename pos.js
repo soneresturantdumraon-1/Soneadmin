@@ -9,6 +9,17 @@
     if (error) { toast('Menu load nahi hua: ' + error.message, 'err'); return MENU; }
     MENU = data || []; loaded = true; return MENU;
   }
+  window.Owner = window.Owner || {};
+  Owner.importMenu = async function () {
+    const seed = window.SONE_MENU_SEED || []; if (!seed.length) return toast('Menu data nahi mila', 'err');
+    if (!await confirmBox(`${seed.length} items ka poora menu load karein? Jo item pehle se hai uska daam nahi badlega.`, 'Load karein')) return;
+    let done = 0;
+    for (let i = 0; i < seed.length; i += 50) {
+      const { error } = await sb.from('menu_items').upsert(seed.slice(i, i + 50), { onConflict: 'name', ignoreDuplicates: true });
+      if (error) return toast('Menu load nahi hua: ' + error.message, 'err'); done += Math.min(50, seed.length - i);
+    }
+    toast(`${done} items ka menu load ho gaya ✓`, 'ok'); await loadMenu(true); drawMenu(); POSUI.show && POSUI.show();
+  };
   const cats = () => [...new Set(MENU.map(m => m.category))];
 
   /* =============== POS =============== */
@@ -127,6 +138,7 @@
   window.MenuUI = { async show() { await loadMenu(true); drawMenu(); } };
   function drawMenu() {
     const l = MENU.filter(m => !mq || m.name.toLowerCase().includes(mq) || m.category.toLowerCase().includes(mq));
+    if (!MENU.length) { $('#menu-list').innerHTML = '<div class="empty"><div class="big">🍽️</div>Menu abhi khali hai.<br><button class="btn mt12" id="seed-btn">📥 Poora menu load karein (211 items)</button></div>'; $('#seed-btn').onclick = () => Owner.importMenu(); return; }
     $('#menu-list').innerHTML = `<div class="small muted" style="padding:10px 20px 0">${MENU.length} items · ${MENU.filter(m => !m.available).length} khatam</div>` +
       ([...new Set(l.map(m => m.category))].map(c => `<div class="cg">${esc(c)}</div><div style="background:var(--card)">${l.filter(m => m.category === c).map(m => `<div class="pr" data-edit="${m.id}" style="${m.available ? '' : 'opacity:.55'}">
         <span style="flex:none;width:14px;height:14px;border:1.6px solid;border-radius:3px;color:${m.is_veg ? '#0f8a3c' : '#c62828'};display:inline-block;position:relative"><i style="position:absolute;inset:2px;border-radius:50%;background:currentColor"></i></span>
