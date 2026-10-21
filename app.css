@@ -1,0 +1,17 @@
+.chart{padding:6px 4px 0}
+.chart text{fill:var(--label2);font-size:10px;font-family:var(--font)}
+.chart .bar{fill:var(--brand)} .chart .bar2{fill:var(--blue)} .chart .today{opacity:1} .chart .old{opacity:.55}
+.rank{display:flex;gap:10px;align-items:center;padding:8px 0;font-size:15px}
+.rank+.rank{border-top:.5px solid var(--sep)}
+.rank .n{width:22px;height:22px;border-radius:50%;background:var(--fill);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.pr{display:flex;align-items:center;gap:10px;padding:11px 16px;background:var(--card);border-bottom:.5px solid var(--sep)}
+.pos-line{display:flex;align-items:center;gap:10px;padding:10px 16px}
+.pos-line+.pos-line{border-top:.5px solid var(--sep)}
+.mini{display:flex;align-items:center;gap:6px;background:var(--fill);border-radius:10px}
+.mini button{width:32px;height:32px;font-size:18px;font-weight:700}
+.mini span{min-width:18px;text-align:center;font-weight:700}
+.billfoot{position:sticky;bottom:calc(60px + var(--sab));z-index:20;padding:10px 16px;background:var(--blur);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:.5px solid var(--sep)}
+.cg{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--label2);padding:14px 20px 6px;background:var(--bg)}
+.receipt{font:13px/1.35 'Courier New',monospace;color:#000;background:#fff;padding:10px;width:100%}
+.receipt table{width:100%;border-collapse:collapse} .receipt td,.receipt th{padding:2px 0;text-align:left} .receipt th:last-child,.receipt td:last-child{text-align:right}
+.receipt hr{border:0;border-top:1px dashed #000}

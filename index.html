@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D62828">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sone Owner">
+<title>Sone · Owner</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="ios.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="login" class="hide"></div>
+<div id="app" class="hide">
+  <main id="v-home" class="view active">
+    <header class="navbar"><div class="top"><div class="row" style="gap:10px"><img src="sonelogo.png" alt="" style="width:34px;height:34px;object-fit:contain"><div><div class="bold" style="font-size:17px;line-height:1.1">Sone Owner</div><div class="xs muted" id="today-str"></div></div></div><button class="iconbtn" id="home-refresh" aria-label="refresh">↻</button></div></header>
+    <div id="home"></div>
+  </main>
+  <main id="v-orders" class="view">
+    <header class="navbar"><div class="top"><div class="bold" style="font-size:17px">Online Orders</div><input type="date" id="o-date" class="inp" style="width:auto;min-height:36px;padding:6px 10px"></div>
+      <div class="seg mt8" id="o-filter"><button data-f="all" class="on">Sab</button><button data-f="new">Naye</button><button data-f="active">Active</button><button data-f="done">Complete</button><button data-f="cancelled">Cancel</button></div></header>
+    <div style="height:12px"></div><div id="olist"></div>
+  </main>
+  <main id="v-pos" class="view">
+    <header class="navbar"><div class="top"><div class="bold" style="font-size:17px">Counter Billing (POS)</div><button class="btn sm sec" id="pos-hist">Bill history</button></div>
+      <div class="search mt8"><span id="ic-s"></span><input id="pos-q" placeholder="Dish dhoondhein…" autocomplete="off"></div></header>
+    <div id="pos-results"></div>
+    <div id="pos-bill"></div>
+  </main>
+  <main id="v-menu" class="view">
+    <header class="navbar"><div class="top"><div class="bold" style="font-size:17px">Menu</div><button class="btn sm" id="menu-add">＋ Naya item</button></div>
+      <div class="search mt8"><span id="ic-s2"></span><input id="menu-q" placeholder="Menu mein dhoondhein…"></div></header>
+    <div id="menu-list"></div>
+  </main>
+  <main id="v-more" class="view">
+    <header class="navbar"><div class="top"><div class="bold" style="font-size:17px">Aur Options</div></div></header>
+    <div id="more"></div>
+  </main>
+  <nav class="tabbar" id="tabbar">
+    <button data-tab="home" class="active"><span id="t1"></span>Home</button>
+    <button data-tab="orders"><span id="t2"></span>Orders<span class="dot hide" id="new-dot">0</span></button>
+    <button data-tab="pos"><span id="t3"></span>POS</button>
+    <button data-tab="menu"><span id="t4"></span>Menu</button>
+    <button data-tab="more"><span id="t5"></span>More</button>
+  </nav>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="sone.js"></script>
+<script src="staff.js"></script>
+<script src="pos.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
