@@ -1,4 +1,5 @@
 {
+  "id": "sone-owner-app",
   "name": "Sone Owner",
   "short_name": "Sone Owner",
   "description": "Sone Restaurant owner dashboard",
@@ -8,6 +9,7 @@
   "orientation": "portrait",
   "background_color": "#F2F2F7",
   "theme_color": "#D62828",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "icon-192.png",
