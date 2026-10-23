@@ -519,11 +519,12 @@ window.SONE_CONFIG = {
       chime(3); haptic([250, 120, 250]);
       toast('🔔 Naya order: ' + fresh[0].customer_name + ' · ' + money(fresh[0].total), 'ok');
       speak('Naya order aaya hai');
+      S.notify('🔔 Naya order · Sone', fresh[0].customer_name + ' · ' + money(fresh[0].total) + (fresh.length > 1 ? ' (+' + (fresh.length - 1) + ' aur)' : ''));
     }
     S.onOrders && S.onOrders(S.orders, fresh);
   };
   S.startLive = function () {
-    S.refresh(); S.ensureNames();
+    S.refresh(); S.ensureNames(); S.askNotifyPermission();
     let t; const deb = () => { clearTimeout(t); t = setTimeout(S.refresh, 400); };
     sb.channel('orders-live').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, deb).subscribe();
     setInterval(S.refresh, 15000);
@@ -608,6 +609,22 @@ window.SONE_CONFIG = {
     a.innerHTML = html; setTimeout(() => window.print(), 150);
   }
   S.printHTML = printHTML;
+  /* ---------- phone/laptop notification (app khula ho ya background mein, dono mein; system ki awaaz ke saath) ---------- */
+  S.notify = async function (title, body) {
+    try {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const opt = { body, tag: 'sone-order', renotify: true, silent: !!ls.get('sone_mute', false), requireInteraction: true, vibrate: [250, 120, 250], icon: 'icon-192.png', badge: 'icon-192.png' };
+      const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+      if (reg && reg.showNotification) return reg.showNotification(title, opt);
+      new Notification(title, opt);
+    } catch (e) {}
+  };
+  S.askNotifyPermission = function () {
+    if (!('Notification' in window) || Notification.permission !== 'default') return;
+    const go = () => { document.removeEventListener('click', go, true); try { Notification.requestPermission(); } catch (e) {} };
+    document.addEventListener('click', go, true);
+  };
+
   /* ---------- KOT (bill receipt jaisa design: print + photo) ---------- */
   const KFF = "Arial,'Noto Sans Devanagari','Noto Sans Bengali','Noto Sans Gujarati','Noto Sans Tamil','Noto Sans Telugu',Helvetica,sans-serif";
   const kTT = x => (window.SONE_TR ? window.SONE_TR(x) : x);
