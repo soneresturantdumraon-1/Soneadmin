@@ -714,6 +714,28 @@ window.SONE_CONFIG = {
     $('#kv-ph', sh.el).onclick = async e => { const t = e.currentTarget; t.disabled = true; try { await S.kotShare(o); } finally { t.disabled = false; } };
   };
 
+
+  /* ---------- profile: mobile number ---------- */
+  S.contactsOf = v => { try { const a = typeof v === 'string' ? JSON.parse(v) : v; return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+  S.profileView = function () {
+    const me = S.me, role = me.role === 'owner' ? 'Owner' : 'Waiter';
+    const sh = sheet(`<div class="sh-head"><h3>Meri profile</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="sh-body"><div class="card"><div class="row" style="gap:12px"><div class="av" style="background:#5B6CE0">${esc((me.name || '?').trim().charAt(0).toUpperCase())}</div><div class="grow"><div class="bold" style="font-size:18px">${esc(me.name)}</div><div class="small muted">${role}</div></div></div>
+        <label class="field mt12"><span>Mera mobile number (10 digit)</span><input class="inp" id="pf-ph" type="tel" inputmode="numeric" maxlength="10" placeholder="98XXXXXXXX" value="${esc(me.phone || '')}"></label>
+        <button class="btn block mt8" id="pf-save">Save karein</button></div>
+        <p class="xs muted pad">${me.role === 'owner' ? 'Customer ko kaun sa number dikhana hai, wo More → "Customer ke liye call numbers" mein chunein.' : 'Ye number sirf owner ko dikhta hai. Customer ko dikhana hai ya nahi, owner tay karta hai.'}</p></div>`);
+    $('#pf-save', sh.el).onclick = async e => {
+      const p = $('#pf-ph', sh.el).value.replace(/\D/g, '').slice(-10);
+      if (p && p.length !== 10) return toast('10 digit ka mobile number likhein', 'err');
+      const b = e.currentTarget; b.disabled = true;
+      try {
+        const { error } = await sb.rpc('set_my_phone', { p_phone: p });
+        if (error) return toast(/function|schema|column|find/i.test(error.message) ? 'Pehle Supabase mein migration SQL run karein' : error.message, 'err');
+        me.phone = p || null; toast(p ? 'Number save ho gaya ✓' : 'Number hata diya', 'ok'); sh.close();
+      } finally { b.disabled = false; }
+    };
+  };
+
   /* ---------- staff performance (kaun kitna order / accept / table serve) ---------- */
   S.perfData = async function (fromStr, toStr) {
     await S.ensureNames();
@@ -1190,7 +1212,9 @@ window.SONE_CONFIG = {
       <div class="section-h" style="padding-top:14px">${IC('shop','#FF9500',20)}Restaurant</div>
       <div class="list">
         <button class="li chev" data-m="settings" style="width:100%;text-align:left">${IC('gear','#8E8E93')}<span class="grow t">Delivery, minimum order, UPI</span></button>
- <button class="li chev" data-m="perf" style="width:100%;text-align:left">${IC('chart','#5B6CE0')}<span class="grow t">Staff ka hisaab (kaun kitna)</span></button>
+ <button class="li chev" data-m="profile" style="width:100%;text-align:left">${IC('users','#34C759')}<span class="grow t">Meri profile (mobile number)</span></button>
+        <button class="li chev" data-m="contacts" style="width:100%;text-align:left">${IC('phone','#007AFF')}<span class="grow t">Customer ke liye call numbers</span></button>
+        <button class="li chev" data-m="perf" style="width:100%;text-align:left">${IC('chart','#5B6CE0')}<span class="grow t">Staff ka hisaab (kaun kitna)</span></button>
         <button class="li chev" data-m="staff" style="width:100%;text-align:left">${IC('users','#007AFF')}<span class="grow t">Staff (waiter) accounts</span></button>
         <button class="li chev" data-m="seed" style="width:100%;text-align:left">${IC('down','#34C759')}<span class="grow t">Poora menu load karein (211 items)</span></button>
         <button class="li chev" data-m="udhaar" style="width:100%;text-align:left">${IC('book','#5856D6')}<span class="grow t">Udhaar (baaki payment)</span></button>
@@ -1206,7 +1230,7 @@ window.SONE_CONFIG = {
   }
   $('#more').onclick = e => {
     const b = e.target.closest('[data-m]'); if (!b) return; const m = b.dataset.m;
-    if (m === 'settings') settingsSheet(); if (m === 'staff') staffSheet(); if (m === 'perf') Staff.perfView(); if (m === 'udhaar') udhaarSheet(); if (m === 'seed') Owner.importMenu(); if (m === 'export') exportSheet();
+    if (m === 'settings') settingsSheet(); if (m === 'staff') staffSheet(); if (m === 'perf') Staff.perfView(); if (m === 'profile') Staff.profileView(); if (m === 'contacts') contactsSheet(); if (m === 'udhaar') udhaarSheet(); if (m === 'seed') Owner.importMenu(); if (m === 'export') exportSheet();
     if (m === 'test') { chime(2); speak('Naya order aaya hai'); } if (m === 'logout') Staff.logout();
   };
   document.addEventListener('change', e => { if (e.target.id === 'sw-snd') ls.set('sone_mute', !e.target.checked); });
@@ -1236,11 +1260,44 @@ window.SONE_CONFIG = {
     };
   }
 
+
+  /* ---------- customer ke liye call numbers ---------- */
+  async function contactsSheet() {
+    await Owner.loadSettings(); await Staff.ensureNames();
+    let list = Staff.contactsOf(Owner.SET.contacts).map(x => ({ role: x.role || 'Manager', name: x.name || '', phone: String(x.phone || '') }));
+    const ROLES = ['Owner', 'Manager', 'Waiter'];
+    const sh = sheet(`<div class="sh-head"><h3>Customer ke liye call numbers</h3><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="ct-body"></div>
+      <div class="sh-foot"><button class="btn block" id="ct-save">Save karein</button></div>`, { full: true });
+    const body = $('#ct-body', sh.el);
+    async function staffWithPhone() { try { const { data } = await sb.from('staff').select('name,role,phone,active').order('created_at'); return (data || []).filter(s => s.active && s.phone); } catch (e) { return []; } }
+    let SP = await staffWithPhone();
+    const draw = () => {
+      const have = new Set(list.map(x => x.phone)), add = SP.filter(s => !have.has(s.phone));
+      body.innerHTML = `<p class="small muted pad">Customer app mein "Call karein" ke neeche ye numbers dikhenge. Customer apni marzi se Owner, Manager ya Waiter ko call kar sakta hai.</p>
+        ${list.map((x, i) => `<div class="card" data-i="${i}"><div class="row" style="gap:8px"><select class="inp" data-f="role" style="flex:1">${ROLES.map(r => `<option ${r === x.role ? 'selected' : ''}>${r}</option>`).join('')}</select><button class="btn red sm" data-del="${i}">Hatayein</button></div>
+          <label class="field mt8"><span>Naam</span><input class="inp" data-f="name" value="${esc(x.name)}"></label>
+          <label class="field"><span>Mobile (10 digit)</span><input class="inp" data-f="phone" type="tel" inputmode="numeric" maxlength="10" value="${esc(x.phone)}"></label></div>`).join('')}
+        <div class="pad"><button class="btn sec block" id="ct-add">+ Naya number jodein</button></div>
+        ${add.length ? `<div class="section-h">Staff se jodein</div><div class="list">${add.map((s, i) => `<button class="li" data-sp="${i}" style="width:100%;text-align:left"><span class="grow"><span class="t">${esc(s.name)}</span><span class="s"> · ${s.role === 'owner' ? 'Owner' : 'Waiter'} · ${esc(s.phone)}</span></span><span style="color:var(--blue)">+ Jodein</span></button>`).join('')}</div>` : ''}`;
+      $$('[data-f]', body).forEach(el => el.oninput = () => { const i = +el.closest('[data-i]').dataset.i; list[i][el.dataset.f] = el.dataset.f === 'phone' ? el.value.replace(/\D/g, '').slice(0, 10) : el.value; });
+      $$('[data-del]', body).forEach(b => b.onclick = () => { list.splice(+b.dataset.del, 1); draw(); });
+      $('#ct-add', body).onclick = () => { list.push({ role: 'Manager', name: '', phone: '' }); draw(); };
+      $$('[data-sp]', body).forEach(b => b.onclick = () => { const s = add[+b.dataset.sp]; list.push({ role: s.role === 'owner' ? 'Owner' : 'Waiter', name: s.name, phone: s.phone }); draw(); });
+    };
+    draw();
+    $('#ct-save', sh.el).onclick = async e => {
+      const clean = list.filter(x => x.phone || x.name);
+      if (clean.some(x => !/^\d{10}$/.test(x.phone))) return toast('Har number 10 digit ka hona chahiye', 'err');
+      const b = e.currentTarget; b.disabled = true;
+      try { if (await Owner.saveSettings({ contacts: JSON.stringify(clean) })) { toast('Save ho gaya ✓ — customer ko ab ye numbers dikhenge', 'ok'); sh.close(); } } finally { b.disabled = false; }
+    };
+  }
+
   async function staffSheet() {
     const sh = sheet(`<div class="sh-head"><h3>Staff</h3><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="st-body"><div class="spin"></div></div>`, { full: true });
     async function draw() {
       const { data } = await sb.from('staff').select('*').order('created_at'); const body = $('#st-body', sh.el);
-      body.innerHTML = `<div class="list">${(data || []).map(s => `<div class="li"><div class="grow"><div class="t">${esc(s.name)}</div><div class="s">${s.role === 'owner' ? 'Owner' : 'Waiter'}${s.active ? '' : ' · band'}</div></div>${s.id === Staff.me.id ? '<span class="pill">Aap</span>' : `<label class="sw"><input type="checkbox" data-sid="${s.id}" ${s.active ? 'checked' : ''}><i></i></label>`}</div>`).join('')}</div>
+      body.innerHTML = `<div class="list">${(data || []).map(s => `<div class="li"><div class="grow"><div class="t">${esc(s.name)}</div><div class="s">${s.role === 'owner' ? 'Owner' : 'Waiter'}${s.phone ? ' · 📞 ' + esc(s.phone) : ''}${s.active ? '' : ' · band'}</div></div>${s.id === Staff.me.id ? '<span class="pill">Aap</span>' : `<label class="sw"><input type="checkbox" data-sid="${s.id}" ${s.active ? 'checked' : ''}><i></i></label>`}</div>`).join('')}</div>
         <div class="section-h">Naya waiter jodein</div><div class="card"><label class="field"><span>Naam</span><input class="inp" id="w-name"></label>
         <label class="field"><span>Email (login ke liye)</span><input class="inp" id="w-mail" type="email" autocapitalize="off"></label>
         <label class="field"><span>Password (kam se kam 6 akshar)</span><input class="inp" id="w-pass" type="text" autocapitalize="off"></label>
