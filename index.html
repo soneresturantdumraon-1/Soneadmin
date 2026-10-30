@@ -1484,6 +1484,7 @@ window.SONE_CONFIG = {
  <button class="li chev" data-m="profile" style="width:100%;text-align:left">${IC('users','#34C759')}<span class="grow t">Meri profile (mobile number)</span></button>
         <button class="li chev" data-m="contacts" style="width:100%;text-align:left">${IC('phone','#007AFF')}<span class="grow t">Customer ke liye call numbers</span></button>
         <button class="li chev" data-m="livemap" style="width:100%;text-align:left">${IC('phone','#FF3B30')}<span class="grow t">Live deliveries (map)</span></button>
+ <button class="li chev" data-m="bbill" style="width:100%;text-align:left">${IC('book','#B3141B')}<span class="grow t">🧾 Booking bill (room / khana / party) - photo ya PDF</span></button>
         <button class="li chev" data-m="dayclose" style="width:100%;text-align:left">${IC('book','#FF9500')}<span class="grow t">Din ka hisaab (WhatsApp / print)</span></button>
         <button class="li chev" data-m="perf" style="width:100%;text-align:left">${IC('chart','#5B6CE0')}<span class="grow t">Staff ka hisaab (kaun kitna)</span></button>
         <button class="li chev" data-m="staff" style="width:100%;text-align:left">${IC('users','#007AFF')}<span class="grow t">Staff (waiter) accounts</span></button>
@@ -1508,7 +1509,7 @@ window.SONE_CONFIG = {
   }
   $('#more').onclick = e => {
     const b = e.target.closest('[data-m]'); if (!b) return; const m = b.dataset.m;
-    if (m === 'settings') settingsSheet(); if (m === 'staff') staffSheet(); if (m === 'perf') Staff.perfView(); if (m === 'pwd') Staff.passwordView(); if (m === 'update') soneUpdate(); if (m === 'livemap') Staff.riderMap(null); if (m === 'dayclose') dayCloseSheet(); if (m === 'backup') backupNow(b); if (m === 'restore') restoreSheet(); if (m === 'profile') Staff.profileView(); if (m === 'contacts') contactsSheet(); if (m === 'udhaar') udhaarSheet(); if (m === 'seed') Owner.importMenu(); if (m === 'export') exportSheet();
+    if (m === 'bbill') window.openBookingBill(); if (m === 'settings') settingsSheet(); if (m === 'staff') staffSheet(); if (m === 'perf') Staff.perfView(); if (m === 'pwd') Staff.passwordView(); if (m === 'update') soneUpdate(); if (m === 'livemap') Staff.riderMap(null); if (m === 'dayclose') dayCloseSheet(); if (m === 'backup') backupNow(b); if (m === 'restore') restoreSheet(); if (m === 'profile') Staff.profileView(); if (m === 'contacts') contactsSheet(); if (m === 'udhaar') udhaarSheet(); if (m === 'seed') Owner.importMenu(); if (m === 'export') exportSheet();
     if (m === 'test') { chime(2); speak('Naya order aaya hai'); } if (m === 'logout') Staff.logout();
   };
   document.addEventListener('change', e => { if (e.target.id === 'sw-snd') ls.set('sone_mute', !e.target.checked); });
@@ -2019,6 +2020,197 @@ window.SONE_CONFIG = {
   var bar=document.getElementById('sone-offline');
   function upd(){if(bar)bar.classList.toggle('on',!navigator.onLine);}
   window.addEventListener('online',upd);window.addEventListener('offline',upd);upd();
+})();
+</script>
+<script>/* Booking / Room / Party bill-receipt: photo (PNG) + PDF + WhatsApp */
+(function(){
+  var FF="Arial,'Noto Sans Devanagari','Noto Sans Bengali','Noto Sans Gujarati','Noto Sans Tamil','Noto Sans Telugu',Helvetica,sans-serif";
+  var TYPES=[['room','🛏️ Room'],['food','🍽️ Khana-Pina'],['party','🎉 Party / Hall'],['other','📋 Other']];
+  var SAC={room:'996311',food:'996331',party:'9963',other:'9963'};
+  var PRESET={room:[['Room rent (per night)',1,1500],['Extra bed',1,300]],food:[['Food & beverages',1,0]],
+    party:[['Party hall charges',1,0],['Catering (per plate)',50,250],['Decoration',1,0],['DJ / Sound',1,0]],other:[['Service charges',1,0]]};
+  var TITLE={room:'ROOM BOOKING RECEIPT',food:'FOOD BOOKING RECEIPT',party:'PARTY BOOKING RECEIPT',other:'BOOKING RECEIPT'};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});};
+  var num=function(v){v=parseFloat(v);return isFinite(v)?v:0;};
+  var inr=function(v){v=Math.round(num(v)*100)/100;return '₹'+v.toLocaleString('en-IN',{maximumFractionDigits:2});};
+  var C=function(){return (window.Owner&&Owner.SET)||{};};
+  function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  function dmy(s){if(!s)return '';var p=String(s).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s;}
+  function loadImg(u){return new Promise(function(r){if(!u)return r(null);var i=new Image();i.onload=function(){r(i);};i.onerror=function(){r(null);};i.src=u;});}
+
+  /* ---------- receipt drawing ---------- */
+  async function draw(b){
+    var W=720,P=34,S=2,RED='#b3141b',DK='#1b1614',GR='#6b625b',LN='#e4dcd2';
+    var logo=await loadImg(window.SONE_LOGO);
+    function pass(c,real){
+      var y=0;
+      function T(t,x,yy,z,w,col,al){if(!real)return;c.font=(w||400)+' '+z+'px '+FF;c.fillStyle=col||DK;c.textAlign=al||'left';c.fillText(t,x,yy);}
+      function wrap(t,z,w,mw){c.font=(w||400)+' '+z+'px '+FF;var out=[],cur='';String(t).split(/\s+/).forEach(function(wd){var x=cur?cur+' '+wd:wd;if(c.measureText(x).width>mw&&cur){out.push(cur);cur=wd;}else cur=x;});if(cur)out.push(cur);return out;}
+      function rule(col,th,dash){if(!real)return;c.strokeStyle=col||LN;c.lineWidth=th||1;c.setLineDash(dash?[5,4]:[]);c.beginPath();c.moveTo(P,y);c.lineTo(W-P,y);c.stroke();c.setLineDash([]);}
+      if(real){c.fillStyle='#fff';c.fillRect(0,0,W,4000);}
+      /* header band */
+      var hh=b.tax?136:118;
+      if(real){var g=c.createLinearGradient(0,0,W,hh);g.addColorStop(0,'#1b1614');g.addColorStop(1,'#3a1210');c.fillStyle=g;c.fillRect(0,0,W,hh);c.fillStyle=RED;c.fillRect(0,hh,W,6);
+        if(logo){var lh=88,lw=lh*logo.width/logo.height;c.drawImage(logo,P,15,lw,lh);}}
+      T((window.SONE_NAME||'Sone Restaurant').toUpperCase(),W-P,52,30,800,'#fff','right');
+      T('Dumraon Station Road, Dumraon (Buxar), Bihar',W-P,76,13,400,'#e8c27a','right');
+      T('Mob: 91551 45145',W-P,96,13,400,'#e8c27a','right');
+      if(b.tax&&b.myGstin)T('GSTIN: '+b.myGstin,W-P,116,14,700,'#fff','right');
+      y=hh+6+30;
+      /* title */
+      T(b.tax?'TAX INVOICE':(TITLE[b.type]||TITLE.other),W/2,y+6,21,800,RED,'center');y+=22;
+      rule(RED,2);y+=22;
+      /* meta */
+      T(b.tax?'Invoice No':'Receipt No',P,y,12,600,GR);T('Date',W-P,y,12,600,GR,'right');y+=19;
+      T(b.no,P,y,17,800);T(dmy(b.date),W-P,y,17,800,DK,'right');y+=14;rule();y+=22;
+      T('GUEST / CUSTOMER',P,y,11,700,GR);y+=20;
+      T(b.name||'—',P,y,20,800);y+=22;
+      if(b.phone){T('📞 '+b.phone,P,y,14,400,GR);y+=20;}
+      var meta=[];
+      if(b.evDate)meta.push(['📅 '+(b.type==='room'?'Check-in':'Date'),dmy(b.evDate)+(b.evTime?'  '+b.evTime:'')]);
+      if(b.evDate2&&b.type==='room')meta.push(['📅 Check-out',dmy(b.evDate2)]);
+      if(b.tax&&b.cGstin)meta.push(['🏢 Customer GSTIN',b.cGstin]);
+      if(b.tax&&b.sac)meta.push(['SAC code',b.sac]);
+      if(b.detail)meta.push([b.type==='room'?'🛏️ Room / Guests':b.type==='party'?'👥 Mehmaan / Event':'📌 Detail',b.detail]);
+      if(meta.length){y+=6;if(real){c.fillStyle='#faf6f0';c.fillRect(P,y-4,W-2*P,meta.length*26+14);}y+=16;
+        meta.forEach(function(m){T(m[0],P+14,y,13,600,GR);var ls=wrap(m[1],14,700,W-2*P-190);if(real){c.font='700 14px '+FF;c.textAlign='right';c.fillStyle=DK;c.fillText(ls[0]||'',W-P-14,y);}y+=26;});y+=2;}
+      y+=14;
+      /* table */
+      var cq=W-P-250,cr=W-P-130,ca=W-P;
+      if(real){c.fillStyle=DK;c.fillRect(P,y,W-2*P,32);}
+      T('Description',P+12,y+21,13,700,'#fff');T('Qty',cq,y+21,13,700,'#fff','center');T('Rate',cr,y+21,13,700,'#fff','right');T('Amount',ca-12,y+21,13,700,'#fff','right');y+=32;
+      b.items.forEach(function(it,i){
+        var ls=wrap(it.d,15,600,cq-P-40),h=Math.max(1,ls.length)*20+16;
+        if(real&&i%2===1){c.fillStyle='#faf6f0';c.fillRect(P,y,W-2*P,h);}
+        ls.forEach(function(l,k){T(l,P+12,y+22+k*20,15,600);});
+        T(String(it.q),cq,y+22,15,400,DK,'center');T(inr(it.r),cr,y+22,15,400,DK,'right');T(inr(it.q*it.r),ca-12,y+22,15,700,DK,'right');
+        y+=h;
+      });
+      rule(DK,1.5);y+=26;
+      function row(l,v,z,w,col){T(l,W-P-250,y,z||15,w||400,col||GR);T(v,W-P,y,z||15,w||700,col||DK,'right');y+=(z||15)+11;}
+      row('Subtotal',inr(b.sub));
+      if(b.disc)row('Discount','- '+inr(b.disc),15,400,'#1a8f3c');
+      if(b.gstp){if(b.tax){row('CGST '+(b.gstp/2)+'%',inr(b.gst/2));row('SGST '+(b.gstp/2)+'%',inr(b.gst/2));}else row('GST '+b.gstp+'%',inr(b.gst));}
+      y+=2;
+      if(real){c.fillStyle=RED;c.fillRect(W-P-262,y-18,262+0,40);}
+      T('TOTAL',W-P-250,y+9,17,800,'#fff');T(inr(b.total),W-P-12,y+9,19,800,'#fff','right');y+=46;
+      if(b.adv){row('Advance received ('+(b.mode||'Cash')+')',inr(b.adv),15,600,'#1a8f3c');}
+      if(real){c.fillStyle=b.bal>0?'#fff3e0':'#e8f6ec';c.fillRect(P,y-8,W-2*P,46);c.strokeStyle=b.bal>0?'#ff9500':'#1a8f3c';c.lineWidth=1.5;c.strokeRect(P,y-8,W-2*P,46);}
+      T(b.bal>0?'BALANCE DUE (baaki)':'PAID IN FULL ✓',P+14,y+22,16,800,b.bal>0?'#b25e00':'#1a8f3c');
+      if(b.bal>0)T(inr(b.bal),W-P-14,y+22,22,800,'#b25e00','right');
+      y+=64;
+      if(b.note){T('NOTE / TERMS',P,y,11,700,GR);y+=18;wrap(b.note,13,400,W-2*P).forEach(function(l){T(l,P,y,13,400,DK);y+=19;});y+=8;}
+      y+=26;
+      if(real){c.strokeStyle=GR;c.lineWidth=1;c.beginPath();c.moveTo(W-P-190,y);c.lineTo(W-P,y);c.stroke();}
+      T('Authorised signature',W-P,y+17,12,400,GR,'right');
+      y+=44;
+      if(real){var g2=c.createLinearGradient(0,y,W,y);g2.addColorStop(0,'#1b1614');g2.addColorStop(1,'#3a1210');c.fillStyle=g2;c.fillRect(0,y,W,70);c.fillStyle=RED;c.fillRect(0,y,W,4);}
+      T('🙏 Dhanyavaad! Sone Restaurant mein booking ke liye shukriya',W/2,y+32,15,700,'#fff','center');
+      T('Thank you for choosing us · Dumraon, Bihar',W/2,y+54,12,400,'#e8c27a','center');
+      y+=70;
+      return y;
+    }
+    var m=document.createElement('canvas').getContext('2d');var H=Math.ceil(pass(m,false));
+    var cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;var c=cv.getContext('2d');c.scale(S,S);pass(c,true);
+    return cv;
+  }
+  function canvasBlob(cv,type,q){return new Promise(function(r){cv.toBlob(r,type,q);});}
+
+  /* ---------- tiny PDF writer (JPEG page) ---------- */
+  function makePdf(cv){
+    var jpg=atob(cv.toDataURL('image/jpeg',0.93).split(',')[1]),n=jpg.length,jb=new Uint8Array(n);for(var i=0;i<n;i++)jb[i]=jpg.charCodeAt(i);
+    var pw=595.28,ph=Math.round(pw*cv.height/cv.width*100)/100,enc=new TextEncoder(),parts=[],off=[],len=0;
+    function add(x){var u=typeof x==='string'?enc.encode(x):x;parts.push(u);len+=u.length;}
+    function obj(k,body){off[k]=len;add(k+' 0 obj\n'+body+'\nendobj\n');}
+    add('%PDF-1.4\n');
+    obj(1,'<< /Type /Catalog /Pages 2 0 R >>');obj(2,'<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    obj(3,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+pw+' '+ph+'] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
+    off[4]=len;add('4 0 obj\n<< /Type /XObject /Subtype /Image /Width '+cv.width+' /Height '+cv.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+n+' >>\nstream\n');add(jb);add('\nendstream\nendobj\n');
+    var cs='q '+pw+' 0 0 '+ph+' 0 0 cm /Im0 Do Q';obj(5,'<< /Length '+cs.length+' >>\nstream\n'+cs+'\nendstream');
+    var xr=len;add('xref\n0 6\n0000000000 65535 f \n');for(var k=1;k<=5;k++)add(String(off[k]).padStart(10,'0')+' 00000 n \n');
+    add('trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xr+'\n%%EOF');
+    return new Blob(parts,{type:'application/pdf'});
+  }
+
+  async function out(file,text,phone){
+    if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:text});return;}catch(e){if(e&&e.name==='AbortError')return;}}
+    var u=URL.createObjectURL(file),a=document.createElement('a');a.href=u;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},8000);
+    toast('Receipt save ho gayi — WhatsApp mein attach karke bhejein','ok');
+    if(phone)setTimeout(function(){window.open('https://wa.me/91'+phone,'_blank');},800);
+  }
+
+  /* ---------- form ---------- */
+  window.openBookingBill=function(){
+    var st={type:'party',items:PRESET.party.map(function(x){return{d:x[0],q:x[1],r:x[2]};})};
+    var seq=(ls.get('sone_bb_no',0)||0)+1,d0=today().replace(/-/g,'').slice(2),no='SR-'+d0+'-'+String(seq).padStart(3,'0');
+    var sh=sheet('<div class="sh-head"><h3>🧾 Booking Bill / Receipt</h3><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="bb-body"></div>',{full:true});
+    var body=sh.el.querySelector('#bb-body');
+    function g(id){return sh.el.querySelector('#'+id);}
+    function render(keep){
+      var v=keep||{};
+      body.innerHTML='<div class="card"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'+TYPES.map(function(t){return '<button class="chip'+(st.type===t[0]?' active':'')+'" data-t="'+t[0]+'" style="'+(st.type===t[0]?'background:var(--brand,#b3141b);color:#fff':'')+'">'+t[1]+'</button>';}).join('')+'</div>'
+      +'<label class="field"><span>Customer ka naam</span><input class="inp" id="bb-name" value="'+esc(v.name)+'"></label>'
+      +'<label class="field"><span>Mobile number</span><input class="inp" id="bb-ph" inputmode="numeric" maxlength="10" value="'+esc(v.phone)+'"></label>'
+      +'<div style="display:flex;gap:8px"><label class="field" style="flex:1"><span>'+(st.type==='room'?'Check-in':'Date')+'</span><input class="inp" type="date" id="bb-d" value="'+esc(v.evDate||today())+'"></label>'
+      +(st.type==='room'?'<label class="field" style="flex:1"><span>Check-out</span><input class="inp" type="date" id="bb-d2" value="'+esc(v.evDate2)+'"></label>':'<label class="field" style="flex:1"><span>Time</span><input class="inp" id="bb-t" placeholder="7:00 PM" value="'+esc(v.evTime)+'"></label>')+'</div>'
+      +'<label class="field"><span>'+(st.type==='room'?'Room / Mehmaan (jaise: Room 101, 2 guests)':st.type==='party'?'Event / Mehmaan (jaise: Birthday, 50 guests)':'Detail (optional)')+'</span><input class="inp" id="bb-det" value="'+esc(v.detail)+'"></label></div>'
+      +'<div class="section-h">Items / Charges</div><div class="card" id="bb-items"></div>'
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">'+PRESET[st.type].map(function(p,i){return '<button class="chip" data-p="'+i+'">+ '+esc(p[0])+'</button>';}).join('')+'<button class="chip" data-p="x">+ Naya item</button></div>'
+      +'<div class="card"><div style="display:flex;gap:8px"><label class="field" style="flex:1"><span>Discount ₹</span><input class="inp" id="bb-disc" inputmode="decimal" value="'+esc(v.disc)+'"></label>'
+      +'<label class="field" style="flex:1"><span>GST %</span><input class="inp" id="bb-gst" inputmode="decimal" value="'+esc(v.gstp!=null?v.gstp:(C().gst_pct||0))+'"></label></div>'
+      +'<div style="display:flex;gap:8px"><label class="field" style="flex:1"><span>Advance mila ₹</span><input class="inp" id="bb-adv" inputmode="decimal" value="'+esc(v.adv)+'"></label>'
+      +'<label class="field" style="flex:1"><span>Payment</span><select class="inp" id="bb-mode">'+['Cash','UPI','Card','Bank'].map(function(m){return '<option value="'+m+'"'+((v.mode||'Cash')===m?' selected':'')+'>'+m+'</option>';}).join('')+'</select></label></div>'
+      +'<label class="field"><span>Note / Sharten (optional)</span><textarea class="inp" id="bb-note" placeholder="Jaise: Advance wapas nahi hoga. Baaki raashi event wale din.">'+esc(v.note)+'</textarea></label></div>'
+      +'<div class="card"><div class="li" style="padding:0"><div class="grow"><div class="t">🧾 GST Tax Invoice banayein</div><div class="s" style="font-size:12px;opacity:.65">Lagatar invoice number (SONE/2026-27/0001) database se milega.</div></div><label class="sw"><input type="checkbox" id="bb-tax" '+(v.tax?'checked':'')+'><i></i></label></div>'
+      +(v.tax?'<label class="field"><span>Customer ka GSTIN (optional)</span><input class="inp" id="bb-cg" maxlength="15" autocapitalize="characters" value="'+esc(v.cGstin)+'"></label><label class="field"><span>SAC code (apne CA se pakka karein)</span><input class="inp" id="bb-sac" value="'+esc(v.sac!=null?v.sac:SAC[st.type])+'"></label>':'')+'</div>'
+      +'<div class="card" id="bb-sum" style="font-weight:700"></div>'
+      +'<div style="display:flex;gap:8px;margin-top:10px"><button class="btn grow" id="bb-png">📷 Photo</button><button class="btn grow" id="bb-pdf">📄 PDF</button></div>'
+      +'<button class="btn sec block" id="bb-prev" style="margin-top:8px">👁️ Pehle dekhein (preview)</button><div id="bb-pv" style="margin-top:10px;text-align:center"></div>';
+      items();sum();wire();
+    }
+    function read(){
+      return {type:st.type,no:no,date:today(),name:(g('bb-name').value||'').trim(),phone:(g('bb-ph').value||'').replace(/\D/g,'').slice(-10),
+        evDate:g('bb-d').value,evDate2:g('bb-d2')?g('bb-d2').value:'',evTime:g('bb-t')?g('bb-t').value.trim():'',detail:g('bb-det').value.trim(),
+        disc:g('bb-disc').value,gstp:g('bb-gst').value,adv:g('bb-adv').value,mode:g('bb-mode').value,note:g('bb-note').value.trim(),
+        tax:g('bb-tax').checked,cGstin:g('bb-cg')?g('bb-cg').value.trim().toUpperCase():'',sac:g('bb-sac')?g('bb-sac').value.trim():'',myGstin:(C().gstin||'').toString().trim()};
+    }
+    function calc(){
+      var f=body.querySelector('#bb-name')?read():{};var sub=0;st.items.forEach(function(i){sub+=num(i.q)*num(i.r);});
+      var disc=Math.min(num(f.disc),sub),after=sub-disc,gp=num(f.gstp),gst=after*gp/100,total=Math.round((after+gst)*100)/100,adv=num(f.adv);
+      return {sub:sub,disc:disc,gstp:gp,gst:gst,total:total,adv:adv,bal:Math.max(0,Math.round((total-adv)*100)/100)};
+    }
+    function items(){
+      g('bb-items').innerHTML=st.items.length?st.items.map(function(it,i){return '<div style="border-bottom:.5px solid var(--sep,#ddd);padding:8px 0"><input class="inp" data-k="d" data-i="'+i+'" placeholder="Kya hai (item/charge)" value="'+esc(it.d)+'" style="margin-bottom:6px">'
+        +'<div style="display:flex;gap:6px;align-items:center"><input class="inp" data-k="q" data-i="'+i+'" inputmode="decimal" value="'+esc(it.q)+'" style="width:70px" placeholder="Qty"><span>×</span><input class="inp" data-k="r" data-i="'+i+'" inputmode="decimal" value="'+esc(it.r)+'" placeholder="Rate ₹" style="flex:1"><b style="min-width:70px;text-align:right">'+inr(num(it.q)*num(it.r))+'</b><button class="iconbtn" data-x="'+i+'">🗑️</button></div></div>';}).join(''):'<div class="muted small">Neeche se item jodein</div>';
+    }
+    function sum(){var c=calc();g('bb-sum').innerHTML='<div style="display:flex;justify-content:space-between"><span>Total</span><span>'+inr(c.total)+'</span></div><div style="display:flex;justify-content:space-between;color:'+(c.bal>0?'#b25e00':'#1a8f3c')+'"><span>Baaki (balance)</span><span>'+inr(c.bal)+'</span></div>';}
+    function build(){var f=read(),c=calc();
+      var its=st.items.filter(function(i){return (i.d||'').trim()&&num(i.q)>0&&num(i.r)>0;}).map(function(i){return{d:i.d.trim(),q:num(i.q),r:num(i.r)};});
+      return Object.assign(f,c,{items:its});}
+    function ok(b){if(!b.name){toast('Customer ka naam likhein','err');return false;}if(!b.items.length){toast('Kam se kam ek item jodein','err');return false;}
+      if(b.tax&&!b.myGstin){toast('Pehle More > Settings mein apna GSTIN daalein','err');return false;}
+      if(b.tax&&!(b.gstp>0)){toast('GST Tax Invoice ke liye GST % daalein','err');return false;}return true;}
+    async function finalize(b){
+      if(!b.tax){commit();return b;}
+      if(st.invNo){b.no=st.invNo;return b;}
+      var r;try{r=await sb.rpc('issue_gst_invoice',{p_data:b});}catch(e){r={error:e};}
+      if(!r||r.error||!r.data){toast('Invoice number nahi mila. Pehle gst-invoice SQL chalayein','err');return null;}
+      st.invNo=r.data;b.no=r.data;return b;}
+    function commit(){ls.set('sone_bb_no',seq);}
+    function wire(){
+      body.onclick=function(e){
+        var t=e.target.closest('[data-t]');if(t){var cur=read();st.type=t.dataset.t;st.items=PRESET[st.type].map(function(x){return{d:x[0],q:x[1],r:x[2]};});render(cur);return;}
+        var p=e.target.closest('[data-p]');if(p){var k=p.dataset.p;if(k==='x')st.items.push({d:'',q:1,r:0});else{var x=PRESET[st.type][+k];st.items.push({d:x[0],q:x[1],r:x[2]});}items();sum();return;}
+        var x2=e.target.closest('[data-x]');if(x2){st.items.splice(+x2.dataset.x,1);items();sum();return;}
+      };
+      body.onchange=function(e){if(e.target.id==='bb-tax'){var cur=read();render(cur);}};
+      body.oninput=function(e){var el=e.target;if(el.dataset&&el.dataset.k){st.items[+el.dataset.i][el.dataset.k]=el.value;var b=el.parentNode.querySelector('b');if(b){var it=st.items[+el.dataset.i];b.textContent=inr(num(it.q)*num(it.r));}}sum();};
+      g('bb-prev').onclick=async function(){var b=build();if(!ok(b))return;if(b.tax)b.no=st.invNo||'(auto number)';var cv=await draw(b);g('bb-pv').innerHTML='<img style="max-width:100%;border:1px solid #ddd;border-radius:10px" src="'+cv.toDataURL('image/png')+'">';};
+      g('bb-png').onclick=async function(){var b=build();if(!ok(b))return;b=await finalize(b);if(!b)return;var cv=await draw(b),bl=await canvasBlob(cv,'image/png');if(!bl)return toast('Photo nahi ban payi','err');await out(new File([bl],'Receipt-'+b.no+'.png',{type:'image/png'}),'Sone Restaurant - '+b.no,b.phone);};
+      g('bb-pdf').onclick=async function(){var b=build();if(!ok(b))return;b=await finalize(b);if(!b)return;var cv=await draw(b);await out(new File([makePdf(cv)],'Receipt-'+b.no+'.pdf',{type:'application/pdf'}),'Sone Restaurant - '+b.no,b.phone);};
+    }
+    render();
+  };
 })();
 </script>
 </body>
