@@ -1239,7 +1239,7 @@ window.SONE_CONFIG = {
   const cats = () => [...new Set(MENU.map(m => m.category))];
 
   /* =============== POS =============== */
-  window.SONE_X = (window.SONE_X || []).concat([["⏸ रोकें", "⏸ रोकें", "⏸ Hold", "⏸ Hold", "⏸ Hold", "⏸ Hold", "⏸ Hold", "⏸ Hold"],["⏸ रोकें · नया बिल बनाएं", "⏸ रोकें · नया बिल बनाएं", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill"],["⏸ रोके हुए बिल", "⏸ रोके हुए बिल", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills"],["खोलें", "खोलें", "Open", "Open", "Open", "Open", "Open", "Open"],["आइटम", "आइटम", "items", "items", "items", "items", "items", "items"],["टेबल", "टेबल", "Table", "Table", "Table", "Table", "Table", "Table"],["बिल", "बिल", "Bill", "Bill", "Bill", "Bill", "Bill", "Bill"],["बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓", "बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓"],["रोका हुआ बिल खुल गया ✓", "रोका हुआ बिल खुल गया ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓"],["यह रोका हुआ बिल हटाएं?", "यह रोका हुआ बिल हटाएं?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?"],["हटाएं", "हटाएं", "Delete", "Delete", "Delete", "Delete", "Delete", "Delete"]]);
+  window.SONE_X = (window.SONE_X || []).concat([["✏️ बिल बदलें", "✏️ बिल बदलें", "✏️ Edit bill", "✏️ Edit bill", "✏️ Edit bill", "✏️ Edit bill", "✏️ Edit bill", "✏️ Edit bill"],["✏️ आइटम बदलें", "✏️ आइटम बदलें", "✏️ Edit item", "✏️ Edit item", "✏️ Edit item", "✏️ Edit item", "✏️ Edit item", "✏️ Edit item"],["आइटम का नाम", "आइटम का नाम", "Item name", "Item name", "Item name", "Item name", "Item name", "Item name"],["कीमत (₹)", "कीमत (₹)", "Price (₹)", "Price (₹)", "Price (₹)", "Price (₹)", "Price (₹)", "Price (₹)"],["मात्रा", "मात्रा", "Quantity", "Quantity", "Quantity", "Quantity", "Quantity", "Quantity"],["सहेजें", "सहेजें", "Save", "Save", "Save", "Save", "Save", "Save"],["＋ नया आइटम जोड़ें", "＋ नया आइटम जोड़ें", "＋ Add new item", "＋ Add new item", "＋ Add new item", "＋ Add new item", "＋ Add new item", "＋ Add new item"],["ग्राहक का नाम", "ग्राहक का नाम", "Customer name", "Customer name", "Customer name", "Customer name", "Customer name", "Customer name"],["छूट (₹)", "छूट (₹)", "Discount (₹)", "Discount (₹)", "Discount (₹)", "Discount (₹)", "Discount (₹)", "Discount (₹)"],["नकद (₹)", "नकद (₹)", "Cash (₹)", "Cash (₹)", "Cash (₹)", "Cash (₹)", "Cash (₹)", "Cash (₹)"],["ऑनलाइन (₹)", "ऑनलाइन (₹)", "Online (₹)", "Online (₹)", "Online (₹)", "Online (₹)", "Online (₹)", "Online (₹)"],["उप-कुल", "उप-कुल", "Subtotal", "Subtotal", "Subtotal", "Subtotal", "Subtotal", "Subtotal"],["देय राशि", "देय राशि", "Payable", "Payable", "Payable", "Payable", "Payable", "Payable"],["उधार (बाकी)", "उधार (बाकी)", "Udhaar (due)", "Udhaar (due)", "Udhaar (due)", "Udhaar (due)", "Udhaar (due)", "Udhaar (due)"],["बदलाव सहेजें", "बदलाव सहेजें", "Save changes", "Save changes", "Save changes", "Save changes", "Save changes", "Save changes"],["बिल सहेज लिया गया ✓", "बिल सहेज लिया गया ✓", "Bill saved ✓", "Bill saved ✓", "Bill saved ✓", "Bill saved ✓", "Bill saved ✓", "Bill saved ✓"],["कम से कम एक आइटम चाहिए", "कम से कम एक आइटम चाहिए", "At least one item is required", "At least one item is required", "At least one item is required", "At least one item is required", "At least one item is required", "At least one item is required"],["हर आइटम का नाम, कीमत और मात्रा सही भरें", "हर आइटम का नाम, कीमत और मात्रा सही भरें", "Fill each item's name, price and quantity correctly", "Fill each item's name, price and quantity correctly", "Fill each item's name, price and quantity correctly", "Fill each item's name, price and quantity correctly", "Fill each item's name, price and quantity correctly", "Fill each item's name, price and quantity correctly"],["उधार के लिए ग्राहक का नाम ज़रूरी है", "उधार के लिए ग्राहक का नाम ज़रूरी है", "Customer name is required for udhaar", "Customer name is required for udhaar", "Customer name is required for udhaar", "Customer name is required for udhaar", "Customer name is required for udhaar", "Customer name is required for udhaar"],["नकद + ऑनलाइन देय राशि से ज़्यादा है। फिर भी सहेजें?", "नकद + ऑनलाइन देय राशि से ज़्यादा है। फिर भी सहेजें?", "Cash + Online is more than payable. Save anyway?", "Cash + Online is more than payable. Save anyway?", "Cash + Online is more than payable. Save anyway?", "Cash + Online is more than payable. Save anyway?", "Cash + Online is more than payable. Save anyway?", "Cash + Online is more than payable. Save anyway?"],["हाँ", "हाँ", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes"],["बिल सहेजा नहीं जा सका", "बिल सहेजा नहीं जा सका", "Could not save the bill", "Could not save the bill", "Could not save the bill", "Could not save the bill", "Could not save the bill", "Could not save the bill"],["संपादित करें", "संपादित करें", "Edit", "Edit", "Edit", "Edit", "Edit", "Edit"],["छूट", "छूट", "Discount", "Discount", "Discount", "Discount", "Discount", "Discount"],["⏸ रोकें", "⏸ रोकें", "⏸ Hold", "⏸ Hold", "⏸ Hold", "⏸ Hold", "⏸ Hold", "⏸ Hold"],["⏸ रोकें · नया बिल बनाएं", "⏸ रोकें · नया बिल बनाएं", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill"],["⏸ रोके हुए बिल", "⏸ रोके हुए बिल", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills"],["खोलें", "खोलें", "Open", "Open", "Open", "Open", "Open", "Open"],["आइटम", "आइटम", "items", "items", "items", "items", "items", "items"],["टेबल", "टेबल", "Table", "Table", "Table", "Table", "Table", "Table"],["बिल", "बिल", "Bill", "Bill", "Bill", "Bill", "Bill", "Bill"],["बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓", "बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓"],["रोका हुआ बिल खुल गया ✓", "रोका हुआ बिल खुल गया ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓"],["यह रोका हुआ बिल हटाएं?", "यह रोका हुआ बिल हटाएं?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?"],["हटाएं", "हटाएं", "Delete", "Delete", "Delete", "Delete", "Delete", "Delete"]]);
   let bill = [], q = '', cat = '';
   /* Hold / multiple bills: ek bill ko hold karke naya bill bana sakte hain */
   let drafts = (window.ls.get('sone_drafts', []) || []).filter(d => d && Array.isArray(d.bill) && d.bill.length);
@@ -1292,6 +1292,7 @@ window.SONE_CONFIG = {
       if (mi) { const l = bill[mi.dataset.bm]; l.qty--; if (l.qty <= 0) bill.splice(mi.dataset.bm, 1); draw(); }
       if (pl) { bill[pl.dataset.bp].qty++; draw(); }
       if (x) { bill.splice(x.dataset.bx, 1); draw(); }
+      const be = e.target.closest('[data-be]'); if (be) editLine(+be.dataset.be, draw);
       if (e.target.closest('#pa-open')) billSheet();
       if (e.target.closest('#pa-hold')) { if (holdCur()) { toast('बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓', 'ok'); draw(); } }
       const hr = e.target.closest('[data-hr]'), hd = e.target.closest('[data-hd]');
@@ -1304,12 +1305,78 @@ window.SONE_CONFIG = {
     if (!$('#pa-name')) build();
     $('#pa-bill').innerHTML = !bill.length ? '<div class="muted small" style="padding:6px 0">Abhi koi item nahi. Upar se item jodein.</div>' :
       `<table style="width:100%;border-collapse:collapse;font-size:14px"><tr class="muted xs"><th align="left">Item</th><th align="left">Qty</th><th align="right">Price</th><th align="right">Total</th><th></th></tr>
-      ${bill.map((l, i) => `<tr style="border-top:.5px solid var(--sep)"><td style="padding:8px 4px 8px 0">${esc(l.name)}</td><td><div class="mini"><button data-bm="${i}">−</button><span>${l.qty}</span><button data-bp="${i}">+</button></div></td><td align="right">${money(l.price)}</td><td align="right"><b>${money(l.price * l.qty)}</b></td><td align="right"><button class="iconbtn" data-bx="${i}" style="width:30px;height:30px;color:var(--red)">✕</button></td></tr>`).join('')}</table>
+      ${bill.map((l, i) => `<tr style="border-top:.5px solid var(--sep)"><td style="padding:8px 4px 8px 0">${esc(l.name)}</td><td><div class="mini"><button data-bm="${i}">−</button><span>${l.qty}</span><button data-bp="${i}">+</button></div></td><td align="right">${money(l.price)}</td><td align="right"><b>${money(l.price * l.qty)}</b></td><td align="right" style="white-space:nowrap"><button class="iconbtn" data-be="${i}" aria-label="संपादित करें" style="width:30px;height:30px">${PEN(18)}</button><button class="iconbtn" data-bx="${i}" style="width:30px;height:30px;color:var(--red)">✕</button></td></tr>`).join('')}</table>
       <div class="row between" style="font-size:22px;margin-top:10px"><b>Grand Total</b><b style="color:var(--green)">${money(total())}</b></div>
       <div class="row gap8 mt12"><button class="btn red grow" id="pa-clear">Clear</button><button class="btn sec grow" id="pa-hold">⏸ रोकें</button><button class="btn green grow" id="pa-open">Payment & Bill</button></div>`;
     const hh = $('#pa-held'); if (hh) hh.innerHTML = drafts.length ? `<div class="card" style="margin-top:12px"><div class="row bold" style="font-size:16px;margin-bottom:8px"><span>⏸ रोके हुए बिल</span> <span>(${drafts.length})</span></div>${drafts.map((d, i) => `<div class="row gap8" style="padding:8px 0;border-top:.5px solid var(--sep)"><div class="grow"><div class="bold">${dLabel(d, i)}</div><div class="xs muted"><span>${d.bill.reduce((a, l) => a + l.qty, 0)}</span> <span>आइटम</span> · <span>${money(d.bill.reduce((a, l) => a + l.price * l.qty, 0))}</span></div></div><button class="btn sm" data-hr="${d.id}">खोलें</button><button class="iconbtn" data-hd="${d.id}" style="width:30px;height:30px;color:var(--red)">✕</button></div>`).join('')}</div>` : '';
     $('#pos-bill').innerHTML = bill.length ? `<div class="billfoot"><button class="btn green block" id="pos-open">Bill dekhein · ${cnt()} items · ${money(total())}</button></div>` : '';
     const o = $('#pos-open'); if (o) o.onclick = billSheet;
+  }
+
+  /* ---------- edit icon + edit sheets ---------- */
+  const PEN = z => `<svg viewBox="0 0 24 24" width="${z || 14}" height="${z || 14}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:5px;vertical-align:-2px;opacity:.75"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>`;
+  function editLine(i, done) {
+    const l = bill[i]; if (!l) return;
+    const sh = sheet(`<div class="sh-head"><h3><span>✏️ आइटम बदलें</span></h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="sh-body"><div class="card"><label class="field"><span>आइटम का नाम</span><input class="inp" id="el-n" value="${esc(l.name)}"></label>
+      <div class="row gap8"><label class="field grow" style="margin:0"><span>कीमत (₹)</span><input class="inp" id="el-p" type="number" inputmode="decimal" value="${l.price}"></label>
+      <label class="field grow" style="margin:0"><span>मात्रा</span><input class="inp" id="el-q" type="number" inputmode="numeric" value="${l.qty}"></label></div></div></div>
+      <div class="sh-foot"><button class="btn block" id="el-s">सहेजें</button></div>`);
+    $('#el-s', sh.el).onclick = () => {
+      const name = $('#el-n', sh.el).value.trim(), price = parseFloat($('#el-p', sh.el).value), qty = parseInt($('#el-q', sh.el).value, 10);
+      if (!name || !(price > 0) || !(qty >= 1 && qty <= 99)) return toast('हर आइटम का नाम, कीमत और मात्रा सही भरें', 'err');
+      l.name = name; l.price = price; l.qty = qty; l.key = name + '|' + price;
+      const dup = bill.findIndex((x, j) => j !== i && x.key === l.key); if (dup >= 0) { bill[dup].qty += l.qty; bill.splice(i, 1); }
+      sh.close(); done && done();
+    };
+  }
+  function editSaved(b) {
+    const st = { items: (b.items || []).map(i => ({ name: String(i.name || ''), price: Number(i.price) || 0, qty: Number(i.qty) || 1 })),
+      disc: Number(b.discount) || 0, cash: Number(b.cash) || 0, online: Number(b.online) || 0, name: b.customer_name || '', table: b.table_no || '' };
+    const sub = () => st.items.reduce((a, l) => a + l.price * l.qty, 0), pay = () => Math.max(0, sub() - st.disc);
+    const ud = () => Math.max(0, Math.round((pay() - st.cash - st.online) * 100) / 100);
+    let auto = st.cash + st.online >= pay() - 0.01;
+    const sh = sheet(`<div class="sh-head"><h3><span>✏️ बिल बदलें</span> #${esc(b.bill_no)}</h3><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="eb"></div>
+      <div class="sh-foot"><button class="btn block" id="eb-save">बदलाव सहेजें</button></div>`, { full: true });
+    const body = $('#eb', sh.el);
+    function totals() {
+      if (auto) { st.cash = Math.max(0, pay() - st.online); const c = $('#eb-cash', body); if (c && document.activeElement !== c) c.value = st.cash || ''; }
+      $('#eb-tot', body).innerHTML = `<div class="row between"><span class="muted">उप-कुल</span><b>${money(sub())}</b></div>${st.disc ? `<div class="row between"><span class="muted">छूट</span><b>− ${money(st.disc)}</b></div>` : ''}
+        <div class="row between" style="font-size:20px;margin-top:6px"><b>देय राशि</b><b>${money(pay())}</b></div>${ud() > 0 ? `<div class="row between mt8" style="color:var(--red)"><b>उधार (बाकी)</b><b>${money(ud())}</b></div>` : ''}`;
+    }
+    function render() {
+      body.innerHTML = `${st.items.map((l, i) => `<div class="card" style="margin:8px 16px 0;padding:10px"><label class="field" style="margin:0 0 8px"><span>आइटम का नाम${PEN()}</span><input class="inp" data-f="name" data-i="${i}" value="${esc(l.name)}"></label>
+        <div class="row gap8"><label class="field grow" style="margin:0"><span>कीमत (₹)${PEN()}</span><input class="inp" data-f="price" data-i="${i}" type="number" inputmode="decimal" value="${l.price}"></label>
+        <label class="field grow" style="margin:0"><span>मात्रा${PEN()}</span><input class="inp" data-f="qty" data-i="${i}" type="number" inputmode="numeric" value="${l.qty}"></label>
+        <button class="iconbtn" data-rm="${i}" style="width:36px;height:36px;color:var(--red);align-self:flex-end">✕</button></div></div>`).join('')}
+        <div class="pad"><button class="btn sec block" id="eb-add">＋ नया आइटम जोड़ें</button></div>
+        <div class="card mt12"><div class="row gap8"><label class="field grow" style="margin:0"><span>ग्राहक का नाम${PEN()}</span><input class="inp" id="eb-name" value="${esc(st.name)}"></label><label class="field" style="margin:0;width:90px"><span>टेबल${PEN()}</span><input class="inp" id="eb-table" value="${esc(st.table)}"></label></div>
+        <div class="row gap8 mt12"><label class="field grow" style="margin:0"><span>छूट (₹)${PEN()}</span><input class="inp" id="eb-disc" type="number" inputmode="decimal" value="${st.disc || ''}"></label>
+        <label class="field grow" style="margin:0"><span>नकद (₹)${PEN()}</span><input class="inp" id="eb-cash" type="number" inputmode="decimal" value="${st.cash || ''}"></label>
+        <label class="field grow" style="margin:0"><span>ऑनलाइन (₹)${PEN()}</span><input class="inp" id="eb-online" type="number" inputmode="decimal" value="${st.online || ''}"></label></div><div id="eb-tot" class="mt12"></div></div><div style="height:20px"></div>`;
+      $$('[data-f]', body).forEach(inp => inp.oninput = () => { const l = st.items[inp.dataset.i], f = inp.dataset.f; l[f] = f === 'name' ? inp.value : (f === 'qty' ? parseInt(inp.value, 10) || 0 : parseFloat(inp.value) || 0); totals(); });
+      $$('[data-rm]', body).forEach(x => x.onclick = () => { st.items.splice(x.dataset.rm, 1); render(); });
+      $('#eb-add', body).onclick = () => { st.items.push({ name: '', price: 0, qty: 1 }); render(); };
+      $('#eb-name', body).oninput = e => { st.name = e.target.value; }; $('#eb-table', body).oninput = e => { st.table = e.target.value; };
+      $('#eb-disc', body).oninput = e => { st.disc = Math.max(0, parseFloat(e.target.value) || 0); totals(); };
+      $('#eb-cash', body).oninput = e => { auto = false; st.cash = Math.max(0, parseFloat(e.target.value) || 0); totals(); };
+      $('#eb-online', body).oninput = e => { st.online = Math.max(0, parseFloat(e.target.value) || 0); totals(); };
+      totals();
+    }
+    $('#eb-save', sh.el).onclick = async e => {
+      if (!st.items.length) return toast('कम से कम एक आइटम चाहिए', 'err');
+      if (st.items.some(l => !String(l.name).trim() || !(l.price > 0) || !(l.qty >= 1))) return toast('हर आइटम का नाम, कीमत और मात्रा सही भरें', 'err');
+      if (ud() > 0 && !st.name.trim()) return toast('उधार के लिए ग्राहक का नाम ज़रूरी है', 'err');
+      if (st.cash + st.online > pay() + 0.001 && !await confirmBox('नकद + ऑनलाइन देय राशि से ज़्यादा है। फिर भी सहेजें?', 'हाँ')) return;
+      const btn = e.currentTarget; btn.disabled = true;
+      try {
+        const patch = { items: st.items.map(l => ({ name: String(l.name).trim(), price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: sub(), discount: st.disc, cash: st.cash, online: st.online, udhaar: ud(), customer_name: st.name.trim() || null, table_no: st.table.trim() || null };
+        const { data, error } = await sb.from('pos_sales').update(patch).eq('id', b.id).select().single();
+        if (error) throw error;
+        sh.close(); toast('बिल सहेज लिया गया ✓', 'ok'); b._reload && b._reload(); billView({ ...b, ...data });
+      } catch (err) { btn.disabled = false; toast('बिल सहेजा नहीं जा सका: ' + (err.message || err), 'err'); }
+    };
+    render();
   }
 
   function billSheet() {
@@ -1322,13 +1389,13 @@ window.SONE_CONFIG = {
       if (auto) { cash = payable() - online; if (cash < 0) cash = 0; }
       const ud = Math.max(0, payable() - cash - online);
       body.innerHTML = `<div class="list">${bill.map((l, i) => `<div class="pos-line"><div class="grow"><div>${esc(l.name)}</div><div class="small muted">${money(l.price)}</div></div>
-        <div class="mini"><button data-m="${i}">−</button><span>${l.qty}</span><button data-p="${i}">+</button></div><b style="min-width:62px;text-align:right">${money(l.price * l.qty)}</b></div>`).join('')}</div>
+        <div class="mini"><button data-m="${i}">−</button><span>${l.qty}</span><button data-p="${i}">+</button></div><button class="iconbtn" data-e="${i}" aria-label="संपादित करें" style="width:32px;height:32px;background:none">${PEN(18)}</button><b style="min-width:62px;text-align:right">${money(l.price * l.qty)}</b></div>`).join('')}</div>
         <div class="card mt12">
-          <div class="row gap8"><label class="field grow" style="margin:0"><span>Customer naam</span><input class="inp" id="b-name" value="${esc(ctx.name)}"></label><label class="field" style="margin:0;width:90px"><span>Table</span><input class="inp" id="b-table" value="${esc(ctx.table)}"></label></div>
-          <label class="field" style="margin:12px 0 0"><span>Mobile (optional)</span><input class="inp" id="b-phone" type="tel" inputmode="numeric" maxlength="10" value="${esc(ctx.phone)}"></label>
-          <div class="row gap8 mt12"><label class="field grow" style="margin:0"><span>Discount ₹</span><input class="inp" id="b-disc" type="number" inputmode="decimal" value="${disc || ''}"></label>
-          <label class="field grow" style="margin:0"><span>Cash ₹</span><input class="inp" id="b-cash" type="number" inputmode="decimal" value="${cash || ''}"></label>
-          <label class="field grow" style="margin:0"><span>Online ₹</span><input class="inp" id="b-online" type="number" inputmode="decimal" value="${online || ''}"></label></div>
+          <div class="row gap8"><label class="field grow" style="margin:0"><span>Customer naam${PEN()}</span><input class="inp" id="b-name" value="${esc(ctx.name)}"></label><label class="field" style="margin:0;width:90px"><span>Table${PEN()}</span><input class="inp" id="b-table" value="${esc(ctx.table)}"></label></div>
+          <label class="field" style="margin:12px 0 0"><span>Mobile (optional)${PEN()}</span><input class="inp" id="b-phone" type="tel" inputmode="numeric" maxlength="10" value="${esc(ctx.phone)}"></label>
+          <div class="row gap8 mt12"><label class="field grow" style="margin:0"><span>Discount ₹${PEN()}</span><input class="inp" id="b-disc" type="number" inputmode="decimal" value="${disc || ''}"></label>
+          <label class="field grow" style="margin:0"><span>Cash ₹${PEN()}</span><input class="inp" id="b-cash" type="number" inputmode="decimal" value="${cash || ''}"></label>
+          <label class="field grow" style="margin:0"><span>Online ₹${PEN()}</span><input class="inp" id="b-online" type="number" inputmode="decimal" value="${online || ''}"></label></div>
           <div class="row between mt12"><span class="muted">Subtotal</span><b>${money(total())}</b></div>
           ${disc ? `<div class="row between"><span class="muted">Discount</span><b>− ${money(disc)}</b></div>` : ''}
           <div class="row between" style="font-size:20px;margin-top:6px"><b>Payable</b><b>${money(payable())}</b></div>
@@ -1336,6 +1403,7 @@ window.SONE_CONFIG = {
         </div>`;
       $$('[data-m]', body).forEach(b => b.onclick = () => { const l = bill[b.dataset.m]; l.qty--; if (l.qty <= 0) bill.splice(b.dataset.m, 1); keep(); render(); });
       $$('[data-p]', body).forEach(b => b.onclick = () => { bill[b.dataset.p].qty++; keep(); render(); });
+      $$('[data-e]', body).forEach(b => b.onclick = () => { keep(); editLine(+b.dataset.e, render); });
       const num = id => Math.max(0, Number($(id, body).value) || 0);
       $('#b-disc', body).onchange = () => { keep(); disc = Math.min(num('#b-disc'), total()); auto = true; render(); };
       $('#b-cash', body).oninput = () => { auto = false; cash = num('#b-cash'); updUd(); };
@@ -1466,9 +1534,10 @@ window.SONE_CONFIG = {
     const sh = sheet(`<div class="sh-head"><h3>${b._due ? tt('Bill (payment baaki)') : 'Bill #' + b.bill_no}</h3><button class="iconbtn" data-close>✕</button></div>
       <div class="sh-body"><div style="background:#fff;border-radius:12px;margin:0 16px;overflow:auto;box-shadow:var(--shadow)">${receipt(b)}</div>
       <div class="card mt12"><label class="field" style="margin:0"><span>Customer ka WhatsApp number (optional)</span><input class="inp" id="bv-ph" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digit mobile" value="${esc(b._phone || '')}"></label></div></div>
-      <div class="sh-foot">${b._order && b._order.payment_status !== 'paid' ? '<div class="row gap8 mb8"><button class="btn green grow" id="bv-cash">💵 Cash mila ✓</button><button class="btn blue grow" id="bv-upi">📲 UPI mila ✓</button></div>' : ''}<div class="row gap8"><button class="btn green grow" id="bv-wa">📷 WhatsApp (photo)</button><button class="btn sec grow" id="bv-pr">🖨 Print / PDF</button></div><button class="btn sec sm block mt8" id="bv-tx">Sirf text mein bhejein</button></div>`, { full: true });
+      <div class="sh-foot">${b._order && b._order.payment_status !== 'paid' ? '<div class="row gap8 mb8"><button class="btn green grow" id="bv-cash">💵 Cash mila ✓</button><button class="btn blue grow" id="bv-upi">📲 UPI mila ✓</button></div>' : ''}<div class="row gap8"><button class="btn green grow" id="bv-wa">📷 WhatsApp (photo)</button><button class="btn sec grow" id="bv-pr">🖨 Print / PDF</button></div><button class="btn sec sm block mt8" id="bv-tx">Sirf text mein bhejein</button>${b.id && !b._order && !b._prov ? '<button class="btn sec sm block mt8" id="bv-ed">✏️ बिल बदलें</button>' : ''}</div>`, { full: true });
     const ph = () => $('#bv-ph', sh.el).value.replace(/\D/g, '').slice(-10);
     $('#bv-pr', sh.el).onclick = () => Staff.printHTML(receipt(b));
+    { const ed = $('#bv-ed', sh.el); if (ed) ed.onclick = () => { sh.close(); editSaved(b); }; }
     { const payNow = async m => { const o = b._order; await Staff.update(o, { payment_status: 'paid', payment_method: m }); toast(tt('Payment mil gayi. Bill paid ho gaya ✓'), 'ok'); sh.close(); window.orderBill(o); };
       const bc = $('#bv-cash', sh.el); if (bc) { bc.onclick = () => payNow('counter'); $('#bv-upi', sh.el).onclick = () => payNow('upi'); } }
     $('#bv-wa', sh.el).onclick = async e => { const t = e.currentTarget; t.disabled = true; try { if (ph().length === 10 && window.touchCustomer) touchCustomer(ph(), b.customer_name, 0, false); await sendPhoto(b, ph().length === 10 ? ph() : ''); } finally { t.disabled = false; } };
@@ -1487,8 +1556,9 @@ window.SONE_CONFIG = {
       const sum = data.reduce((a, b) => a + Number(b.subtotal) - Number(b.discount), 0);
       body.innerHTML = (data.length ? `<div class="small muted" style="padding:0 20px 8px">${data.length} bills · ${money(sum)}</div>` : '<div class="empty"><div class="big">🧾</div>Is din koi bill nahi</div>') +
         `<div class="list">${data.map(b => `<div class="li"><div class="grow"><div class="t">#${b.bill_no} · ${money(Number(b.subtotal) - Number(b.discount))}</div><div class="s">${fmtTime(b.created_at)}${b.customer_name ? ' · ' + esc(b.customer_name) : ''}${Number(b.udhaar) ? ' · udhaar ' + money(b.udhaar) : ''}</div></div>
-        <button class="btn sec sm" data-pr="${b.id}">🧾 Bill</button><button class="btn ${del ? 'green' : 'red'} sm" data-x="${b.id}">${del ? 'Restore' : 'Delete'}</button>${del ? `<button class="iconbtn" data-pd="${b.id}" aria-label="Delete" style="width:40px;height:40px;background:none">${IC('trash', '#FF3B30', 32)}</button>` : ''}</div>`).join('')}</div>`;
-      $$('[data-pr]', body).forEach(x => x.onclick = () => billView(data.find(b => b.id == x.dataset.pr)));
+        ${del ? '' : `<button class="iconbtn" data-ed="${b.id}" aria-label="संपादित करें" style="width:40px;height:40px;background:none">${PEN(22)}</button>`}<button class="btn sec sm" data-pr="${b.id}">🧾 Bill</button><button class="btn ${del ? 'green' : 'red'} sm" data-x="${b.id}">${del ? 'Restore' : 'Delete'}</button>${del ? `<button class="iconbtn" data-pd="${b.id}" aria-label="Delete" style="width:40px;height:40px;background:none">${IC('trash', '#FF3B30', 32)}</button>` : ''}</div>`).join('')}</div>`;
+      $$('[data-pr]', body).forEach(x => x.onclick = () => billView({ ...data.find(b => b.id == x.dataset.pr), _reload: load }));
+      $$('[data-ed]', body).forEach(x => x.onclick = () => editSaved({ ...data.find(b => b.id == x.dataset.ed), _reload: load }));
       $$('[data-x]', body).forEach(x => x.onclick = async () => { if (!del && !await confirmBox('Ye bill delete karein? (Deleted mein mil jayega)', 'Delete', true)) return;
         const { error: e } = await sb.from('pos_sales').update({ deleted_at: del ? null : new Date().toISOString() }).eq('id', x.dataset.x); if (e) return toast(e.message, 'err'); load(); });
       $$('[data-pd]', body).forEach(x => x.onclick = async () => { if (!await confirmBox('Is bill ko hamesha ke liye hata dein?', 'Delete', true)) return; const { data: d, error: e } = await sb.from('pos_sales').delete().eq('id', x.dataset.pd).select('id'); if (e) return toast(e.message, 'err'); if (!d || !d.length) return toast('Delete ki permission nahi hai. bill_delete_policy.sql run karein.', 'err'); toast('Bill hamesha ke liye hata diya', 'ok'); load(); });
