@@ -1239,7 +1239,18 @@ window.SONE_CONFIG = {
   const cats = () => [...new Set(MENU.map(m => m.category))];
 
   /* =============== POS =============== */
+  window.SONE_X = (window.SONE_X || []).concat([["⏸ रोकें", "⏸ रोकें", "⏸ Hold", "⏸ Hold", "⏸ Hold", "⏸ Hold", "⏸ Hold", "⏸ Hold"],["⏸ रोकें · नया बिल बनाएं", "⏸ रोकें · नया बिल बनाएं", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill", "⏸ Hold · Start a new bill"],["⏸ रोके हुए बिल", "⏸ रोके हुए बिल", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills", "⏸ Held bills"],["खोलें", "खोलें", "Open", "Open", "Open", "Open", "Open", "Open"],["आइटम", "आइटम", "items", "items", "items", "items", "items", "items"],["टेबल", "टेबल", "Table", "Table", "Table", "Table", "Table", "Table"],["बिल", "बिल", "Bill", "Bill", "Bill", "Bill", "Bill", "Bill"],["बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓", "बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓", "Bill held. You can start a new bill now ✓"],["रोका हुआ बिल खुल गया ✓", "रोका हुआ बिल खुल गया ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓", "Held bill reopened ✓"],["यह रोका हुआ बिल हटाएं?", "यह रोका हुआ बिल हटाएं?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?", "Delete this held bill?"],["हटाएं", "हटाएं", "Delete", "Delete", "Delete", "Delete", "Delete", "Delete"]]);
   let bill = [], q = '', cat = '';
+  /* Hold / multiple bills: ek bill ko hold karke naya bill bana sakte hain */
+  let drafts = (window.ls.get('sone_drafts', []) || []).filter(d => d && Array.isArray(d.bill) && d.bill.length);
+  let ctx = { name: '', table: '', phone: '' }, disc = 0;
+  const saveDrafts = () => window.ls.set('sone_drafts', drafts);
+  const resetCur = () => { bill = []; ctx = { name: '', table: '', phone: '' }; disc = 0; };
+  const dLabel = (d, i) => { const t = d.ctx && d.ctx.table && d.ctx.table.trim(), n = d.ctx && d.ctx.name && d.ctx.name.trim(); return t ? `<span>टेबल</span> ${esc(t)}` : n ? esc(n) : `<span>बिल</span> ${i + 1}`; };
+  function holdCur() {
+    if (!bill.length) return false;
+    drafts.push({ id: Date.now() + Math.random(), bill, ctx: { ...ctx }, disc }); saveDrafts(); resetCur(); return true;
+  }
   const total = () => bill.reduce((a, l) => a + l.price * l.qty, 0);
   const cnt = () => bill.reduce((a, l) => a + l.qty, 0);
   window.POSUI = {
@@ -1250,7 +1261,7 @@ window.SONE_CONFIG = {
   const halfOf = n => MENU.find(m => m.name === n + ' (Half)');
   const hiddenVariant = m => /\(Half\)\s*$/i.test(m.name) && !!fullOf(baseName(m.name));
   function build() {
-    $('#pos-results').innerHTML = `<div class="card" style="margin-top:12px"><div class="row bold" style="font-size:18px;margin-bottom:10px;gap:10px">${IC('search','#007AFF')}Item jodein</div>
+    $('#pos-results').innerHTML = `<div id="pa-held"></div><div class="card" style="margin-top:12px"><div class="row bold" style="font-size:18px;margin-bottom:10px;gap:10px">${IC('search','#007AFF')}Item jodein</div>
       <label class="field"><span>Item ka naam (search karein)</span><input class="inp" id="pa-name" autocomplete="off" placeholder="jaise: Paneer, Roti, Water…"></label><div id="pa-sug"></div>
       <label class="field"><span>Full price (₹)</span><input class="inp" id="pa-price" type="number" inputmode="decimal"></label>
       <label class="field"><span>Quantity — number likhein · Half ke liye H · Full+Half ke liye FH</span><input class="inp" id="pa-qty" value="1" inputmode="text" autocapitalize="characters" autocomplete="off"></label>
@@ -1282,7 +1293,11 @@ window.SONE_CONFIG = {
       if (pl) { bill[pl.dataset.bp].qty++; draw(); }
       if (x) { bill.splice(x.dataset.bx, 1); draw(); }
       if (e.target.closest('#pa-open')) billSheet();
-      if (e.target.closest('#pa-clear') && await confirmBox('Poora bill clear karein?', 'Clear', true)) { bill = []; draw(); }
+      if (e.target.closest('#pa-hold')) { if (holdCur()) { toast('बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓', 'ok'); draw(); } }
+      const hr = e.target.closest('[data-hr]'), hd = e.target.closest('[data-hd]');
+      if (hr) { const d = drafts.find(z => String(z.id) === hr.dataset.hr); if (d) { drafts = drafts.filter(z => z !== d); holdCur(); bill = d.bill; ctx = d.ctx || { name: '', table: '', phone: '' }; disc = d.disc || 0; saveDrafts(); draw(); haptic(8); toast('रोका हुआ बिल खुल गया ✓', 'ok'); } }
+      if (hd) { const d = drafts.find(z => String(z.id) === hd.dataset.hd); if (d && await confirmBox('यह रोका हुआ बिल हटाएं?', 'हटाएं', true)) { drafts = drafts.filter(z => z !== d); saveDrafts(); draw(); } }
+      if (e.target.closest('#pa-clear') && await confirmBox('Poora bill clear karein?', 'Clear', true)) { resetCur(); draw(); }
     };
   }
   function draw() {
@@ -1291,14 +1306,15 @@ window.SONE_CONFIG = {
       `<table style="width:100%;border-collapse:collapse;font-size:14px"><tr class="muted xs"><th align="left">Item</th><th align="left">Qty</th><th align="right">Price</th><th align="right">Total</th><th></th></tr>
       ${bill.map((l, i) => `<tr style="border-top:.5px solid var(--sep)"><td style="padding:8px 4px 8px 0">${esc(l.name)}</td><td><div class="mini"><button data-bm="${i}">−</button><span>${l.qty}</span><button data-bp="${i}">+</button></div></td><td align="right">${money(l.price)}</td><td align="right"><b>${money(l.price * l.qty)}</b></td><td align="right"><button class="iconbtn" data-bx="${i}" style="width:30px;height:30px;color:var(--red)">✕</button></td></tr>`).join('')}</table>
       <div class="row between" style="font-size:22px;margin-top:10px"><b>Grand Total</b><b style="color:var(--green)">${money(total())}</b></div>
-      <div class="row gap8 mt12"><button class="btn red grow" id="pa-clear">Clear</button><button class="btn green grow" id="pa-open">Payment & Bill</button></div>`;
+      <div class="row gap8 mt12"><button class="btn red grow" id="pa-clear">Clear</button><button class="btn sec grow" id="pa-hold">⏸ रोकें</button><button class="btn green grow" id="pa-open">Payment & Bill</button></div>`;
+    const hh = $('#pa-held'); if (hh) hh.innerHTML = drafts.length ? `<div class="card" style="margin-top:12px"><div class="row bold" style="font-size:16px;margin-bottom:8px"><span>⏸ रोके हुए बिल</span> <span>(${drafts.length})</span></div>${drafts.map((d, i) => `<div class="row gap8" style="padding:8px 0;border-top:.5px solid var(--sep)"><div class="grow"><div class="bold">${dLabel(d, i)}</div><div class="xs muted"><span>${d.bill.reduce((a, l) => a + l.qty, 0)}</span> <span>आइटम</span> · <span>${money(d.bill.reduce((a, l) => a + l.price * l.qty, 0))}</span></div></div><button class="btn sm" data-hr="${d.id}">खोलें</button><button class="iconbtn" data-hd="${d.id}" style="width:30px;height:30px;color:var(--red)">✕</button></div>`).join('')}</div>` : '';
     $('#pos-bill').innerHTML = bill.length ? `<div class="billfoot"><button class="btn green block" id="pos-open">Bill dekhein · ${cnt()} items · ${money(total())}</button></div>` : '';
     const o = $('#pos-open'); if (o) o.onclick = billSheet;
   }
 
   function billSheet() {
-    let disc = 0, cash = 0, online = 0, auto = true;
-    const sh = sheet(`<div class="sh-head"><h3>Bill</h3><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="bs"></div><div class="sh-foot"><button class="btn sec block mb8" id="bs-prev">🧾 Pehle bill dikhayein / print</button><button class="btn block" id="bs-save">Save karein & Bill dekhein</button></div>`, { full: true });
+    let cash = 0, online = 0, auto = true;
+    const sh = sheet(`<div class="sh-head"><h3>Bill</h3><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="bs"></div><div class="sh-foot"><button class="btn sec block mb8" id="bs-hold">⏸ रोकें · नया बिल बनाएं</button><button class="btn sec block mb8" id="bs-prev">🧾 Pehle bill dikhayein / print</button><button class="btn block" id="bs-save">Save karein & Bill dekhein</button></div>`, { full: true });
     const body = $('#bs', sh.el);
     const payable = () => Math.max(0, total() - disc);
     function render() {
@@ -1325,9 +1341,9 @@ window.SONE_CONFIG = {
       $('#b-cash', body).oninput = () => { auto = false; cash = num('#b-cash'); updUd(); };
       $('#b-online', body).onchange = () => { keep(); online = num('#b-online'); auto = true; render(); };
     }
-    const ctx = { name: '', table: '', phone: '' };
     const keep = () => { const n = $('#b-name', body), t = $('#b-table', body); if (n) ctx.name = n.value; if (t) ctx.table = t.value; const ph = $('#b-phone', body); if (ph) ctx.phone = ph.value; };
     function updUd() { const ud = Math.max(0, payable() - cash - online); let el = $('#ud-live', body); /* sirf save par check */ }
+    $('#bs-hold', sh.el).onclick = () => { keep(); if (holdCur()) { sh.close(); draw(); toast('बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓', 'ok'); } };
     $('#bs-prev', sh.el).onclick = () => { keep(); if (!bill.length) return; billView({ bill_no: '–', customer_name: ctx.name.trim() || null, table_no: ctx.table.trim() || null, created_at: new Date().toISOString(), items: bill.map(l => ({ name: l.name, price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: total(), discount: disc, cash: 0, online: 0, udhaar: 0, _prov: true, _due: true }); };
     $('#bs-save', sh.el).onclick = async () => {
       keep(); if (!bill.length) return; const pay = payable(), ud = Math.max(0, pay - cash - online);
@@ -1338,7 +1354,7 @@ window.SONE_CONFIG = {
       try {
         const row = await saveBill({ items: bill.map(l => ({ name: l.name, price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: total(), discount: disc, cash, online, udhaar: ud, customer_name: ctx.name.trim() || null, table_no: ctx.table.trim() || null });
         const ph10 = ctx.phone.replace(/\D/g, '').slice(-10); if (ph10.length === 10) { row._phone = ph10; window.touchCustomer && touchCustomer(ph10, ctx.name.trim(), pay, true); }
-        bill = []; sh.close(); draw(); toast('Bill #' + row.bill_no + ' save ho gaya ✓', 'ok'); billView(row);
+        resetCur(); sh.close(); draw(); toast('Bill #' + row.bill_no + ' save ho gaya ✓', 'ok'); billView(row);
       } catch (e) { btn.disabled = false; toast('Bill save nahi hua: ' + (e.message || e), 'err'); }
     };
     render();
@@ -2021,7 +2037,7 @@ window.SONE_CONFIG = {
   var pfx = Object.keys(E).filter(function (k) { return /[#:·]$/.test(k); }).sort(function (a, b) { return b.length - a.length; });
   var NUMRX = /^([^A-Za-z\d]*)([A-Za-z]+)(\s*[#:·\-]*\s*[\d₹(#].*)$/;
   var cur = 'hi';
-  try { var sv = localStorage.getItem('sone_lang'); if (sv && LANGS.some(function (l) { return l[0] === sv; })) cur = sv; } catch (e) {}
+  try { var sv = localStorage.getItem('sone_lang'); if (sv && (sv === 'hi' || sv === 'en') && LANGS.some(function (l) { return l[0] === sv; })) cur = sv; } catch (e) {}
   var idx = function () { for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0] === cur) return i; return 0; };
 
   function tr(str) {
@@ -2090,7 +2106,7 @@ window.SONE_CONFIG = {
     var b = document.getElementById('langbar');
     if (!b) {
       b = document.createElement('div'); b.id = 'langbar'; b.setAttribute('data-noi18n', '');
-      b.innerHTML = '<div class="lb-t">🌐 भाषा / Language</div><div class="lb-r">' + LANGS.map(function (l) {
+      b.innerHTML = '<div class="lb-t">🌐 भाषा / Language</div><div class="lb-r">' + LANGS.filter(function (l) { return l[0] === 'hi' || l[0] === 'en'; }).map(function (l) {
         return '<button type="button" data-l="' + l[0] + '">' + l[1] + '</button>';
       }).join('') + '</div>';
       b.addEventListener('click', function (e) { var x = e.target.closest('button[data-l]'); if (x) setLang(x.getAttribute('data-l')); });
