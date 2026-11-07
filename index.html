@@ -1294,7 +1294,7 @@ window.SONE_CONFIG = {
   const dFail = () => { dOK = false; if (!dWarned) { dWarned = true; toast('Rokay hue bill abhi sirf is device par hain. Sab device ke liye sync-live.sql Supabase me chalayein.', 'err'); } };
   const dPut = async d => { if (!dOK) return; dPend++; try { const { error } = await sb.from('pos_drafts').upsert({ id: String(d.id), data: d, updated_at: new Date().toISOString() }); if (error) dFail(); } catch (e) { dFail(); } finally { dPend--; } };
   const dDel = async id => { if (!dOK) return; dPend++; try { const { error } = await sb.from('pos_drafts').delete().eq('id', String(id)); if (error) dFail(); } catch (e) { dFail(); } finally { dPend--; } };
-  const dPull = async () => { if (!dOK || dPend > 0) return; try { const { data, error } = await sb.from('pos_drafts').select('*').order('updated_at'); if (error) return dFail(); if (dPend > 0) return;
+  const dPull = async () => { if (!dOK || dPend > 0) return; try { const { data, error } = await sb.from('pos_drafts').select('*').not('id', 'like', 'w:%').order('updated_at'); if (error) return dFail(); if (dPend > 0) return;
     drafts = (data || []).map(r => r.data).filter(d => d && Array.isArray(d.bill) && d.bill.length); saveDrafts(); if (window.Owner && Owner.tab === 'pos' && $('#pa-held')) draw(); } catch (e) { dFail(); } };
   let dT; const dDeb = () => { clearTimeout(dT); dT = setTimeout(dPull, 300); };
   window.POSSync = { start() {
