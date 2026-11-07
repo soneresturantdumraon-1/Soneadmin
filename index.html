@@ -876,7 +876,7 @@ window.SONE_CONFIG = {
       : o.order_type === 'dine_in' ? `🪑 Table ${esc(o.table_no)}` : '🛍️ Khud lene aayenge';
     const paid = o.payment_status === 'paid';
     const pp = window.ordPay ? window.ordPay(o) : { c: 0, u: 0 }, hasSplit = (o.cash_amount != null || o.online_amount != null) && pp.c + pp.u > 0, dueAmt = Math.max(0, Math.round((Number(o.total) - pp.c - pp.u) * 100) / 100);
-    const splitTxt = hasSplit ? `<div class="xs muted" style="margin-top:2px">${pp.c ? `<span>नकद</span> ${money(pp.c)}` : ''}${pp.c && pp.u ? ' · ' : ''}${pp.u ? `<span>ऑनलाइन</span> ${money(pp.u)}` : ''}${!paid && dueAmt > 0 ? ` · <b style="color:var(--red)"><span>बाकी</span> ${money(dueAmt)}</b>` : ''}</div>` : '';
+    const splitTxt = hasSplit ? `<div class="xs muted" style="margin-top:2px">${pp.c > 0 ? `<span>नकद</span> ${money(pp.c)}` : pp.c < 0 ? `<span>नकद वापस</span> ${money(-pp.c)}` : ''}${pp.c && pp.u ? ' · ' : ''}${pp.u ? `<span>ऑनलाइन</span> ${money(pp.u)}` : ''}${!paid && dueAmt > 0 ? ` · <b style="color:var(--red)"><span>बाकी</span> ${money(dueAmt)}</b>` : ''}</div>` : '';
     const payLine = `${PAY_LABEL[o.payment_method]}${o.utr ? ' · UTR <b>' + esc(o.utr) + '</b>' : ''} <span class="pill ${paid ? 'green' : 'orange'}">${paid ? 'Paid' : o.payment_status === 'refunded' ? 'Refunded' : 'Pending'}</span>` + splitTxt;
     const open = o.status !== 'completed' && o.status !== 'cancelled';
     const nl = nextLabel(o);
@@ -896,6 +896,7 @@ window.SONE_CONFIG = {
         <button class="btn sec sm" data-act="print" data-id="${o.id}">🧾 KOT</button>
         ${o.status !== 'cancelled' ? `<button class="btn sec sm" data-act="edit" data-id="${o.id}">✏️ बदलें</button>` : ''}
         ${o.status !== 'cancelled' ? `<button class="btn sec sm" data-act="pay" data-id="${o.id}">💰 भुगतान</button>` : ''}
+        ${o.status !== 'cancelled' ? `<button class="btn sec sm" data-act="disc" data-id="${o.id}">🏷️ छूट</button>` : ''}
         ${o.status !== 'cancelled' && o.payment_status !== 'paid' ? `<button class="btn sec sm" data-act="udhaar" data-id="${o.id}">💳 उधार</button>` : ''}
         ${window.Staff && Staff.canAddItems && Staff.canAddItems(o) ? `<button class="btn sec sm" data-act="additems" data-id="${o.id}">➕ Item jodein</button>` : ''}
         ${window.orderBill && o.status !== 'cancelled' ? `<button class="btn sec sm" data-act="bill" data-id="${o.id}">🧾 Bill</button>` : ''}
@@ -1012,6 +1013,7 @@ window.SONE_CONFIG = {
     }
     if (act === 'edit') return S.editOrder && S.editOrder(o);
     if (act === 'pay') return S.payOrder && S.payOrder(o);
+    if (act === 'disc') return S.quickDisc && S.quickDisc(o);
     if (act === 'udhaar') { if ((o.note || '').includes('[उधार')) return toast('इस ऑर्डर को पहले ही उधार में डाला जा चुका है', 'err'); return window.addUdhaar({ order: o }); }
     if (act === 'additems') return S.addItems(o);
     if (act === 'bill') return window.orderBill && window.orderBill(o);
@@ -1287,11 +1289,27 @@ window.SONE_CONFIG = {
   let drafts = (window.ls.get('sone_drafts', []) || []).filter(d => d && Array.isArray(d.bill) && d.bill.length);
   let ctx = { name: '', table: '', phone: '' }, disc = 0;
   const saveDrafts = () => window.ls.set('sone_drafts', drafts);
+  /* ---- rokay hue bill sabhi mobile/computer par (Supabase table pos_drafts) ---- */
+  let dOK = true, dPend = 0, dWarned = false;
+  const dFail = () => { dOK = false; if (!dWarned) { dWarned = true; toast('Rokay hue bill abhi sirf is device par hain. Sab device ke liye sync-live.sql Supabase me chalayein.', 'err'); } };
+  const dPut = async d => { if (!dOK) return; dPend++; try { const { error } = await sb.from('pos_drafts').upsert({ id: String(d.id), data: d, updated_at: new Date().toISOString() }); if (error) dFail(); } catch (e) { dFail(); } finally { dPend--; } };
+  const dDel = async id => { if (!dOK) return; dPend++; try { const { error } = await sb.from('pos_drafts').delete().eq('id', String(id)); if (error) dFail(); } catch (e) { dFail(); } finally { dPend--; } };
+  const dPull = async () => { if (!dOK || dPend > 0) return; try { const { data, error } = await sb.from('pos_drafts').select('*').order('updated_at'); if (error) return dFail(); if (dPend > 0) return;
+    drafts = (data || []).map(r => r.data).filter(d => d && Array.isArray(d.bill) && d.bill.length); saveDrafts(); if (window.Owner && Owner.tab === 'pos' && $('#pa-held')) draw(); } catch (e) { dFail(); } };
+  let dT; const dDeb = () => { clearTimeout(dT); dT = setTimeout(dPull, 300); };
+  window.POSSync = { start() {
+    if (this.on) return; this.on = true; dPull();
+    const mk = () => { try { if (this.ch) sb.removeChannel(this.ch); } catch (e) {}
+      this.ch = sb.channel('drafts-live').on('postgres_changes', { event: '*', schema: 'public', table: 'pos_drafts' }, dDeb).subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') setTimeout(mk, 8000); }); };
+    mk(); setInterval(dPull, 20000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) dPull(); });
+    window.addEventListener('online', () => { dPull(); mk(); });
+  } };
   const resetCur = () => { bill = []; ctx = { name: '', table: '', phone: '' }; disc = 0; };
   const dLabel = (d, i) => { const t = d.ctx && d.ctx.table && d.ctx.table.trim(), n = d.ctx && d.ctx.name && d.ctx.name.trim(); return t ? `<span>टेबल</span> ${esc(t)}` : n ? esc(n) : `<span>बिल</span> ${i + 1}`; };
   function holdCur() {
     if (!bill.length) return false;
-    drafts.push({ id: Date.now() + Math.random(), bill, ctx: { ...ctx }, disc }); saveDrafts(); resetCur(); return true;
+    const nd = { id: Date.now() + Math.random(), bill, ctx: { ...ctx }, disc }; drafts.push(nd); saveDrafts(); dPut(nd); resetCur(); return true;
   }
   const total = () => bill.reduce((a, l) => a + l.price * l.qty, 0);
   const cnt = () => bill.reduce((a, l) => a + l.qty, 0);
@@ -1338,8 +1356,8 @@ window.SONE_CONFIG = {
       if (e.target.closest('#pa-open')) billSheet();
       if (e.target.closest('#pa-hold')) { if (holdCur()) { toast('बिल रोक दिया गया। अब नया बिल बना सकते हैं ✓', 'ok'); draw(); } }
       const hr = e.target.closest('[data-hr]'), hd = e.target.closest('[data-hd]');
-      if (hr) { const d = drafts.find(z => String(z.id) === hr.dataset.hr); if (d) { drafts = drafts.filter(z => z !== d); holdCur(); bill = d.bill; ctx = d.ctx || { name: '', table: '', phone: '' }; disc = d.disc || 0; saveDrafts(); draw(); haptic(8); toast('रोका हुआ बिल खुल गया ✓', 'ok'); } }
-      if (hd) { const d = drafts.find(z => String(z.id) === hd.dataset.hd); if (d && await confirmBox('यह रोका हुआ बिल हटाएं?', 'हटाएं', true)) { drafts = drafts.filter(z => z !== d); saveDrafts(); draw(); } }
+      if (hr) { const d = drafts.find(z => String(z.id) === hr.dataset.hr); if (d) { drafts = drafts.filter(z => z !== d); dDel(d.id); holdCur(); bill = d.bill; ctx = d.ctx || { name: '', table: '', phone: '' }; disc = d.disc || 0; saveDrafts(); draw(); haptic(8); toast('रोका हुआ बिल खुल गया ✓', 'ok'); } }
+      if (hd) { const d = drafts.find(z => String(z.id) === hd.dataset.hd); if (d && await confirmBox('यह रोका हुआ बिल हटाएं?', 'हटाएं', true)) { drafts = drafts.filter(z => z !== d); saveDrafts(); dDel(d.id); draw(); } }
       if (e.target.closest('#pa-clear') && await confirmBox('Poora bill clear karein?', 'Clear', true)) { resetCur(); draw(); }
     };
   }
@@ -1488,7 +1506,7 @@ window.SONE_CONFIG = {
     const titles = { sales: 'आज की कुल बिक्री', orders: 'ऑनलाइन ऑर्डर', bills: 'काउंटर बिल', cash: 'नकद मिला', online: 'ऑनलाइन/UPI मिला' };
     const pickO = o => kind === 'sales' || kind === 'orders' ? Number(o.total) || 0 : kind === 'cash' ? pay(o).c : kind === 'online' ? pay(o).u : 0;
     const pickP = x => kind === 'sales' || kind === 'bills' ? posAmt(x) : kind === 'cash' ? Number(x.cash) || 0 : kind === 'online' ? Number(x.online) || 0 : 0;
-    (ord || []).forEach(o => { const a = pickO(o); if ((kind === 'orders' || a > 0) && kind !== 'bills') E.push({ t: o.created_at, a, o }); });
+    (ord || []).forEach(o => { const a = pickO(o); if ((kind === 'orders' || a > 0 || (kind === 'cash' && a < 0)) && kind !== 'bills') E.push({ t: o.created_at, a, o }); });
     (pos || []).forEach(x => { const a = pickP(x); if ((kind === 'bills' || a > 0) && kind !== 'orders') E.push({ t: x.created_at, a, p: x }); });
     E.sort((x, y) => new Date(y.t) - new Date(x.t));
     const tot = E.reduce((a, e) => a + e.a, 0);
@@ -1512,18 +1530,23 @@ window.SONE_CONFIG = {
     return { c, u };
   };
   /* ---------- order ka bhugtaan: nakad aur online kitna mila ---------- */
-  window.payPatchFor = (o, cash, online) => {
-    const T = Number(o.total) || 0, got = Math.round((cash + online) * 100) / 100, p = { cash_amount: cash, online_amount: online };
+  /* ज़्यादा payment aaye (jaise bill 500, online 550) to extra rakam "nakad wapas" maani jaati hai:
+     cash_amount me minus (-50) save hota hai. Isse nakad ka hisaab sahi (drawer se 50 gaye), online bank se match (550), bikri 500. */
+  window.payLoad = o => { const p = window.ordPay(o); return { cash: Math.max(0, p.c), online: p.u }; };
+  window.payPatchFor = (o, cash, online, Tn) => {
+    const T = Tn != null ? Number(Tn) : (Number(o.total) || 0), r2 = v => Math.round(v * 100) / 100;
+    const extra = r2(cash + online) > T + 0.01 ? r2(cash + online - T) : 0, net = r2(cash - extra), got = r2(net + online);
+    const p = { cash_amount: net, online_amount: online };
     if (o.payment_status !== 'refunded') p.payment_status = T > 0 && got >= T - 0.01 ? 'paid' : 'pending';
-    if (online > 0 && cash <= 0) p.payment_method = 'upi';
-    else if (cash > 0 && online <= 0) p.payment_method = o.payment_method === 'cod' ? 'cod' : 'counter';
-    else if (cash > 0 && online > 0) p.payment_method = online >= cash ? 'upi' : (o.payment_method === 'cod' ? 'cod' : 'counter');
+    if (online > 0 && net <= 0) p.payment_method = 'upi';
+    else if (net > 0 && online <= 0) p.payment_method = o.payment_method === 'cod' ? 'cod' : 'counter';
+    else if (net > 0 && online > 0) p.payment_method = online >= net ? 'upi' : (o.payment_method === 'cod' ? 'cod' : 'counter');
     return p;
   };
   function openPay(o, opts) {
     opts = opts || {};
     return new Promise(res => {
-      const T = Math.round((Number(o.total) || 0) * 100) / 100, p0 = window.ordPay(o), st = { cash: p0.c, online: p0.u };
+      const T = Math.round((Number(o.total) || 0) * 100) / 100, p0 = window.payLoad(o), st = { cash: p0.cash, online: p0.online };
       if (st.cash + st.online <= 0 && o.payment_status !== 'paid') { if (opts.prefill === 'upi' || (!opts.prefill && o.payment_method === 'upi')) st.online = T; else st.cash = T; }
       let settled = false; const fin = v => { if (!settled) { settled = true; res(v); } };
       const sh = sheet(`<div class="sh-head"><h3><span>💰 भुगतान</span> #${esc(o.order_no)}</h3><button class="iconbtn" data-close>✕</button></div>
@@ -1533,12 +1556,12 @@ window.SONE_CONFIG = {
         <label class="field grow" style="margin:0"><span>ऑनलाइन (₹)${PEN()}</span><input class="inp" id="py-online" type="number" inputmode="decimal" value="${st.online || ''}"></label></div><div id="py-sum" class="mt12"></div></div></div>
         <div class="sh-foot"><button class="btn green block" id="py-save">सहेजें</button></div>`, { onClose: () => fin(null) });
       const ci = $('#py-cash', sh.el), oi = $('#py-online', sh.el), due = () => Math.max(0, Math.round((T - st.cash - st.online) * 100) / 100);
-      const sum = () => { $('#py-sum', sh.el).innerHTML = `<div class="row between"><span class="muted">प्राप्त राशि</span><b>${money(st.cash + st.online)}</b></div>${due() > 0 ? `<div class="row between mt8" style="color:var(--red)"><b>बाकी राशि</b><b>${money(due())}</b></div><div class="xs muted mt8">बाकी राशि के लिए 💳 उधार बटन इस्तेमाल करें</div>` : ''}`; };
+      const over = () => Math.max(0, Math.round((st.cash + st.online - T) * 100) / 100);
+      const sum = () => { $('#py-sum', sh.el).innerHTML = `<div class="row between"><span class="muted">प्राप्त राशि</span><b>${money(st.cash + st.online)}</b></div>${over() > 0 ? `<div class="card mt8" style="margin:8px 0 0;background:rgba(52,199,89,.14)"><b style="color:var(--green)">💵 ग्राहक को ${money(over())} नकद वापस दें</b><div class="xs muted mt8">हिसाब में अपने आप दर्ज होगा: बिक्री ${money(T)} · नकद −${money(over())}</div></div>` : ''}${due() > 0 ? `<div class="row between mt8" style="color:var(--red)"><b>बाकी राशि</b><b>${money(due())}</b></div><div class="xs muted mt8">बाकी राशि के लिए 💳 उधार बटन इस्तेमाल करें</div>` : ''}`; };
       ci.oninput = () => { st.cash = Math.max(0, parseFloat(ci.value) || 0); sum(); }; oi.oninput = () => { st.online = Math.max(0, parseFloat(oi.value) || 0); sum(); };
       $('#py-allc', sh.el).onclick = () => { st.cash = T; st.online = 0; ci.value = T || ''; oi.value = ''; sum(); };
       $('#py-allu', sh.el).onclick = () => { st.online = T; st.cash = 0; oi.value = T || ''; ci.value = ''; sum(); };
       $('#py-save', sh.el).onclick = () => {
-        if (st.cash + st.online > T + 0.01) return toast('प्राप्त राशि देय राशि से ज़्यादा है', 'err');
         const p = window.payPatchFor(o, st.cash, st.online); fin(p); sh.close();
       };
       sum();
@@ -1549,6 +1572,36 @@ window.SONE_CONFIG = {
     const p = await openPay(o, opts); if (!p) return false;
     await window.Staff.update(o, p);
     toast('भुगतान सहेजा गया ✓', 'ok'); return true;
+  };
+
+  /* ---------- Orders tab: seedhi छूट (₹ ya %) + ज़्यादा payment par nakad wapas ka hisaab ---------- */
+  window.Staff.quickDisc = function (o) {
+    const T0 = Math.round((Number(o.total) || 0) * 100) / 100, pay = window.ordPay(o), got = Math.round((pay.c + pay.u) * 100) / 100;
+    const st = { mode: 'rs', v: 0 };
+    const sh = sheet(`<div class="sh-head"><h3><span>🏷️ छूट</span> #${esc(o.order_no)}</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="sh-body"><div class="card"><div class="row between" style="font-size:18px"><b>अभी की राशि</b><b>${money(T0)}</b></div>
+      <div class="seg mt12"><button data-m="rs" class="active">₹ रुपये</button><button data-m="pc">% प्रतिशत</button></div>
+      <div class="row gap8 mt12"><button class="btn sec sm grow" data-q="10">10</button><button class="btn sec sm grow" data-q="20">20</button><button class="btn sec sm grow" data-q="50">50</button><button class="btn sec sm grow" data-q="100">100</button></div>
+      <label class="field mt12" style="margin:12px 0 0"><span id="qd-lbl">छूट (₹)</span><input class="inp" id="qd-v" type="number" inputmode="decimal"></label><div id="qd-sum" class="mt12"></div></div></div>
+      <div class="sh-foot"><button class="btn green block" id="qd-save">छूट लगाएं</button></div>`, {});
+    const inp = $('#qd-v', sh.el);
+    const dAmt = () => Math.min(T0, Math.round((st.mode === 'pc' ? T0 * Math.min(100, st.v) / 100 : st.v) * 100) / 100);
+    const sum = () => { const d = dAmt(), N = Math.round((T0 - d) * 100) / 100, ex = Math.max(0, Math.round((got - N) * 100) / 100);
+      $('#qd-sum', sh.el).innerHTML = `<div class="row between"><span class="muted">छूट</span><b>− ${money(d)}</b></div><div class="row between" style="font-size:20px;margin-top:6px"><b>नई देय राशि</b><b>${money(N)}</b></div>${got > 0 ? `<div class="row between mt8"><span class="muted">प्राप्त राशि</span><b>${money(got)}</b></div>` : ''}${ex > 0 ? `<div class="mt8" style="color:var(--green)"><b>💵 ${money(ex)} ग्राहक को नकद वापस दें</b><div class="xs muted">हिसाब में अपने आप दर्ज होगा (नकद −${money(ex)})</div></div>` : ''}`; };
+    $$('[data-m]', sh.el).forEach(b => b.onclick = () => { st.mode = b.dataset.m; $$('[data-m]', sh.el).forEach(x => x.classList.toggle('active', x === b)); $('#qd-lbl', sh.el).textContent = st.mode === 'pc' ? 'छूट (%)' : 'छूट (₹)'; sum(); });
+    $$('[data-q]', sh.el).forEach(b => b.onclick = () => { st.v = +b.dataset.q; inp.value = st.v; sum(); });
+    inp.oninput = () => { st.v = Math.max(0, parseFloat(inp.value) || 0); sum(); };
+    $('#qd-save', sh.el).onclick = async e => {
+      const d = dAmt(); if (!(d > 0)) return toast('छूट की राशि डालें', 'err');
+      const N = Math.round((T0 - d) * 100) / 100, patch = { total: N }, btn = e.currentTarget; btn.disabled = true;
+      try {
+        if (got > 0 || o.cash_amount != null || o.online_amount != null) Object.assign(patch, window.payPatchFor(o, pay.c, pay.u, N));
+        const before = o.total; await window.Staff.update(o, patch);
+        if (o.total === before && N !== before) return;
+        sh.close(); toast('छूट लग गई ✓', 'ok');
+      } finally { btn.disabled = false; }
+    };
+    sum();
   };
   /* ---------- Orders tab: order edit (items, discount, customer, table, note, payment) ---------- */
   window.Staff.editOrder = async function (o) {
@@ -1561,16 +1614,16 @@ window.SONE_CONFIG = {
     const st = { items: items0.map(i => ({ ...i, name: String(i.name || ''), price: Number(i.price) || 0, qty: Number(i.qty) || 1 })), disc: disc0,
       name: o.customer_name || '', table: o.table_no || '', phone: o.phone && o.phone !== '-' ? o.phone : '', note: o.note || '' };
     const sub = () => st.items.reduce((a, l) => a + l.price * l.qty, 0), tot = () => Math.max(0, sub() + fee + extra - st.disc);
-    const p0 = window.ordPay(o); st.cash = p0.c; st.online = p0.u;
+    const p0 = window.payLoad(o); st.cash = p0.cash; st.online = p0.online;
     let auto = (st.cash + st.online) > 0 && st.cash + st.online >= tot0 - 0.01;     /* poora paid tha to total badalne par cash saath badle */
-    const due = () => Math.max(0, Math.round((tot() - st.cash - st.online) * 100) / 100);
+    const due = () => Math.max(0, Math.round((tot() - st.cash - st.online) * 100) / 100), over = () => Math.max(0, Math.round((st.cash + st.online - tot()) * 100) / 100);
     const sh = sheet(`<div class="sh-head"><h3><span>✏️ ऑर्डर बदलें</span> #${esc(o.order_no)}</h3><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="oe"></div>
       <div class="sh-foot"><button class="btn block" id="oe-save">बदलाव सहेजें</button></div>`, { full: true });
     const body = $('#oe', sh.el);
     function totals() {
       if (auto) { st.cash = Math.max(0, Math.round((tot() - st.online) * 100) / 100); const c = $('#oe-cash', body); if (c && document.activeElement !== c) c.value = st.cash || ''; }
       $('#oe-tot', body).innerHTML = `<div class="row between"><span class="muted">उप-कुल</span><b>${money(sub())}</b></div>${fee ? `<div class="row between"><span class="muted">डिलीवरी शुल्क</span><b>${money(fee)}</b></div>` : ''}${extra ? `<div class="row between"><span class="muted">अन्य शुल्क</span><b>${money(extra)}</b></div>` : ''}${st.disc ? `<div class="row between"><span class="muted">छूट</span><b>− ${money(st.disc)}</b></div>` : ''}
-        <div class="row between" style="font-size:20px;margin-top:6px"><b>देय राशि</b><b>${money(tot())}</b></div><div class="row between mt8"><span class="muted">प्राप्त राशि</span><b>${money(st.cash + st.online)}</b></div>${due() > 0 ? `<div class="row between mt8" style="color:var(--red)"><b>बाकी राशि</b><b>${money(due())}</b></div>` : ''}`;
+        <div class="row between" style="font-size:20px;margin-top:6px"><b>देय राशि</b><b>${money(tot())}</b></div><div class="row between mt8"><span class="muted">प्राप्त राशि</span><b>${money(st.cash + st.online)}</b></div>${over() > 0 ? `<div class="mt8" style="color:var(--green)"><b>💵 ${money(over())} नकद वापस दें</b> <span class="xs muted">(हिसाब में नकद −${money(over())})</span></div>` : ''}${due() > 0 ? `<div class="row between mt8" style="color:var(--red)"><b>बाकी राशि</b><b>${money(due())}</b></div>` : ''}`;
     }
     function render() {
       body.innerHTML = `<datalist id="oe-dl">${menu.map(m => `<option value="${esc(m.name)}"></option>`).join('')}</datalist>${st.items.map((l, i) => `<div class="card" style="margin:8px 16px 0;padding:10px"><label class="field" style="margin:0 0 8px"><span>आइटम का नाम${PEN()}</span><input class="inp" list="oe-dl" data-f="name" data-i="${i}" value="${esc(l.name)}"></label>
@@ -1610,12 +1663,7 @@ window.SONE_CONFIG = {
         if (dine && tbl) patch.table_no = tbl;
         if (hasPh && st.phone.trim()) patch.phone = st.phone.trim();
         /* payment: cash + online alag; poora mila to paid, warna pending */
-        const got = Math.round((st.cash + st.online) * 100) / 100, T = tot();
-        patch.cash_amount = st.cash; patch.online_amount = st.online;
-        if (o.payment_status !== 'refunded') patch.payment_status = T > 0 && got >= T - 0.01 ? 'paid' : 'pending';
-        if (st.online > 0 && st.cash <= 0) patch.payment_method = 'upi';
-        else if (st.cash > 0 && st.online <= 0) patch.payment_method = o.payment_method === 'cod' ? 'cod' : 'counter';
-        else if (st.cash > 0 && st.online > 0) patch.payment_method = st.online >= st.cash ? 'upi' : (o.payment_method === 'cod' ? 'cod' : 'counter');
+        Object.assign(patch, window.payPatchFor(o, st.cash, st.online, tot()));
         await window.Staff.update(o, patch);
         if (o.items !== patch.items) return;      /* update fail hua (toast aa chuka) */
         sh.close(); toast('ऑर्डर अपडेट हो गया ✓', 'ok');
@@ -1735,7 +1783,7 @@ window.SONE_CONFIG = {
       <div style="border-top:1px dashed #000;margin-top:4px;padding-top:4px">${row(tt('Total Qty') + ': ' + qty, '')}${row(tt('Subtotal'), money(sub))}${disc ? row(tt('Discount'), '- ' + money(disc)) : ''}
         ${gp ? row(tt('Incl. CGST') + ' ' + gp / 2 + '%', money(tax / 2), 'font-size:11px') + row(tt('Incl. SGST') + ' ' + gp / 2 + '%', money(tax / 2), 'font-size:11px') : ''}</div>
       <div style="display:flex;justify-content:space-between;font-size:17px;font-weight:800;border-top:1px solid #000;border-bottom:1px solid #000;margin:6px 0;padding:4px 0"><span>${tt('GRAND TOTAL')}</span><span>${money(pay)}</span></div>
-      ${Number(b.cash) ? row(tt('Paid - Cash'), money(b.cash)) : ''}${Number(b.online) ? row(tt('Paid - Online/UPI'), money(b.online)) : ''}${Number(b.udhaar) ? row('<b>' + tt('Baaki (Udhaar)') + '</b>', '<b>' + money(b.udhaar) + '</b>') : ''}
+      ${Number(b.cash) > 0 ? row(tt('Paid - Cash'), money(b.cash)) : ''}${Number(b.online) ? row(tt('Paid - Online/UPI'), money(b.online)) : ''}${Number(b.cash) < 0 ? row(tt('Change returned - Cash'), money(-b.cash)) : ''}${Number(b.udhaar) ? row('<b>' + tt('Baaki (Udhaar)') + '</b>', '<b>' + money(b.udhaar) + '</b>') : ''}
       ${qrBlock(b)}
       <div style="text-align:center;margin-top:10px;border-top:1px dashed #000;padding-top:6px"><b>${tt('Dhanyavaad! Phir aaiyega')} 🙏</b><div style="font-size:11px">${tt('Thank you for dining with us')}</div><div style="font-size:11px;font-weight:700;margin-top:3px">${qrWeb()}</div><div style="font-size:14px;font-weight:900;letter-spacing:.3px;color:#000">🌐 sonerestaurantdumraon.in</div><div style="margin-top:8px;border-top:1px dashed #000;padding-top:6px"><div style="font-size:12px;font-weight:700">${tt('Aapko kaisa laga')}</div><div style="display:flex;justify-content:space-around;margin-top:6px;font-size:11px;font-weight:700">${['Excellent', 'Good', 'Average', 'Poor'].map(t => `<span style="display:inline-flex;flex-direction:column;align-items:center;gap:3px"><span style="width:13px;height:13px;border:1.6px solid #000;border-radius:50%;box-sizing:border-box;display:block"></span>${tt(t)}</span>`).join('')}</div></div></div></div>`;
   }
@@ -1769,7 +1817,7 @@ window.SONE_CONFIG = {
     rule(true); const qty = (b.items || []).reduce((a, i) => a + Number(i.qty), 0); line(13, 400, tt('Total Qty') + ': ' + qty); line(13, 400, tt('Subtotal'), m$(sub)); if (disc) line(13, 400, tt('Discount'), '- ' + m$(disc));
     if (gp) { line(11, 400, tt('Incl. CGST') + ' ' + gp / 2 + '%', m$(tax / 2)); line(11, 400, tt('Incl. SGST') + ' ' + gp / 2 + '%', m$(tax / 2)); }
     y += 2; rule(false, 1.5); line(19, 800, tt('GRAND TOTAL'), m$(pay)); rule(false, 1.5);
-    if (Number(b.cash)) line(13, 400, tt('Paid - Cash'), m$(b.cash)); if (Number(b.online)) line(13, 400, tt('Paid - Online/UPI'), m$(b.online)); if (Number(b.udhaar)) line(13, 700, tt('Baaki (Udhaar)'), m$(b.udhaar));
+    if (Number(b.cash) > 0) line(13, 400, tt('Paid - Cash'), m$(b.cash)); if (Number(b.online)) line(13, 400, tt('Paid - Online/UPI'), m$(b.online)); if (Number(b.cash) < 0) line(13, 400, tt('Change returned - Cash'), m$(-b.cash)); if (Number(b.udhaar)) line(13, 700, tt('Baaki (Udhaar)'), m$(b.udhaar));
     { const qlk = qrLink(b); if (qlk) { y += 2; rule(true); line(12, 700, qrCaption(b), null, 'center'); try { const q = SoneQR.make(qlk), sz = Math.min(W - 2 * P - 20, 180), cd = Math.max(1, Math.floor(sz * S / (q.n + 8))), tot = cd * (q.n + 8) / S, yy = y; ops.push(c => SoneQR.draw(c, qlk, (W - tot) / 2, yy, sz, S)); y += tot + 4; line(10, 400, qrNote(b), null, 'center'); } catch (e) {} } }
     y += 4; rule(true); line(14, 700, tt('Dhanyavaad! Phir aaiyega') + ' 🙏', null, 'center'); line(11, 400, tt('Thank you for dining with us'), null, 'center'); line(11, 700, qrWeb(), null, 'center'); line(14, 800, '🌐 sonerestaurantdumraon.in', null, 'center');
     y += 4; rule(true); line(12, 700, tt('Aapko kaisa laga'), null, 'center');
@@ -1821,6 +1869,7 @@ window.SONE_CONFIG = {
     $('#h-day', sh.el).onchange = e => { day = e.target.value; load(); };
     $('#h-seg', sh.el).onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; del = b.dataset.d === '1'; $$('#h-seg button', sh.el).forEach(x => x.classList.toggle('on', x === b)); load(); };
     load();
+    const rl = () => { if (!sh.el.isConnected) return window.removeEventListener('sone:pos', rl); load(); }; window.addEventListener('sone:pos', rl);
   };
 
   /* =============== MENU =============== */
@@ -1955,6 +2004,7 @@ window.SONE_CONFIG = {
       ${ol.length ? `<div class="section-h">Online / Table orders (${ol.length}) · ${money(oT)}</div><div class="list">${ol.map(o => `<div class="li"><div class="grow"><div class="t bold">#${esc(o.order_no)} · ${esc(o.customer_name)}</div><div class="xs muted">${fmtTime(o.created_at)} · ${TYPE_LABEL[o.order_type]}${o.table_no ? ' · Table ' + esc(o.table_no) : ''} · ${esc(STATUS_LABEL[o.status] || o.status)}</div></div><b>${money(o.total)}</b></div>`).join('')}</div>` : ''}</div>`, { full: true });
   }
   $('#home-refresh').onclick = async () => { await Staff.refresh(); renderHome(); };
+  window.Owner.refreshHome = () => { if (Owner.tab === 'home') renderHome(); };
   /* upar calendar: tareekh chuno to us din ki poori report khule */
   { const hc = $('#home-cal'); hc.value = dayStr(); hc.max = dayStr(); hc.onchange = () => { const d = hc.value; if (/^\d{4}-\d{2}-\d{2}$/.test(d)) { dayCloseSheet(d); setTimeout(() => { hc.value = dayStr(); }, 300); } }; }
 
@@ -2793,6 +2843,27 @@ window.billSizeSheet=function(){
     };
     render();
   };
+})();
+</script>
+<script>/* Live sync: dusre mobile / computer par turant dikhe (orders, counter bills, rokay hue bill) */
+(function () {
+  let started = false, T;
+  function start() {
+    if (started) return; started = true;
+    try { window.POSSync && POSSync.start(); } catch (e) {}
+    const kick = () => { window.dispatchEvent(new Event('sone:pos')); if (window.Owner && Owner.tab === 'home' && typeof Owner.refreshHome === 'function') Owner.refreshHome(); };
+    const deb = () => { clearTimeout(T); T = setTimeout(kick, 500); };
+    const mk = () => { try { if (start.ch) sb.removeChannel(start.ch); } catch (e) {}
+      start.ch = sb.channel('pos-live').on('postgres_changes', { event: '*', schema: 'public', table: 'pos_sales' }, deb).on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, deb)
+        .subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') setTimeout(mk, 8000); }); };
+    mk();
+    setInterval(() => { if (!document.hidden) kick(); }, 30000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { kick(); mk(); } });
+    window.addEventListener('online', () => { kick(); mk(); });
+  }
+  const S = window.Staff;
+  if (S && S.startLive) { const o = S.startLive; S.startLive = function () { const r = o.apply(this, arguments); start(); return r; }; if (S._live) start(); }
+  else document.addEventListener('DOMContentLoaded', () => { const S2 = window.Staff; if (S2 && S2.startLive) { const o = S2.startLive; S2.startLive = function () { const r = o.apply(this, arguments); start(); return r; }; if (S2._live) start(); } });
 })();
 </script>
 </body>
