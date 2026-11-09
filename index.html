@@ -1007,14 +1007,19 @@ window.SONE_CONFIG = {
       if (n === 'out_for_delivery' && o.order_type === 'delivery') { const r = await S.pickRider(o); if (!r) return; patch.delivery_by = r.id; patch.delivery_by_name = r.name; }
       if (n === 'completed') {
         if (o.payment_status === 'pending' && o.payment_method === 'upi' && !await confirmBox('UPI payment verify nahi hui. Phir bhi complete karein?', 'Haan, complete')) return;
-        if (o.payment_status === 'pending' && o.payment_method !== 'upi') { const pp = S.askPay ? await S.askPay(o) : null; if (S.askPay && !pp) return; Object.assign(patch, pp || { payment_status: 'paid' }); }
+        const onUdhaar = (o.note || '').includes('[\u0909\u0927\u093e\u0930');   /* udhaar me daala hua order: payment baad me, seedha complete */
+        if (o.payment_status === 'pending' && o.payment_method !== 'upi' && !onUdhaar) {
+          const pp = S.askPay ? await S.askPay(o) : null;
+          if (S.askPay && !pp) { if (!await confirmBox('\u092d\u0941\u0917\u0924\u093e\u0928 \u0926\u0930\u094d\u091c \u0928\u0939\u0940\u0902 \u0939\u0941\u0906\u0964 \u092b\u093f\u0930 \u092d\u0940 \u0911\u0930\u094d\u0921\u0930 \u092a\u0942\u0930\u093e \u0915\u0930\u0947\u0902?', '\u0939\u093e\u0901, \u092a\u0942\u0930\u093e \u0915\u0930\u0947\u0902')) return; }
+          else Object.assign(patch, pp || { payment_status: 'paid' });
+        }
       }
       return S.update(o, patch);
     }
     if (act === 'edit') return S.editOrder && S.editOrder(o);
     if (act === 'pay') return S.payOrder && S.payOrder(o);
     if (act === 'disc') return S.quickDisc && S.quickDisc(o);
-    if (act === 'udhaar') { if ((o.note || '').includes('[उधार')) return toast('इस ऑर्डर को पहले ही उधार में डाला जा चुका है', 'err'); return window.addUdhaar({ order: o }); }
+    if (act === 'udhaar') { if ((o.note || '').includes('[उधार')) { if (await confirmBox('यह ऑर्डर पहले से उधार में है। उधार हटाएँ?', 'हाँ, हटाएँ', true)) return window.undoOrderUdhaar && window.undoOrderUdhaar(o); return; } return window.addUdhaar({ order: o }); }
     if (act === 'additems') return S.addItems(o);
     if (act === 'bill') return window.orderBill && window.orderBill(o);
     if (act === 'paid') return S.update(o, { payment_status: 'paid' });
@@ -1475,6 +1480,24 @@ window.SONE_CONFIG = {
       <div class="card">${rows || '<div class="small muted"><span>कोई बिक्री नहीं</span></div>'}</div>`;
   };
   /* ---------- udhaar add: khana kha ke gaye, paisa baad mein ---------- */
+
+  /* ---------- galti se jodha hua udhaar hatana (bill soft-delete + order ka [उधार] marker hatana) ---------- */
+  const UD_MARK = /\s*\[\u0909\u0927\u093e\u0930 \u20b9[\d.]+\]/g;
+  window.undoUdhaarBill = async function (r) {
+    const { error } = await sb.from('pos_sales').update({ deleted_at: new Date().toISOString() }).eq('id', r.id); if (error) throw error;
+    const m = String(((r.items || [])[0] || {}).name || '').match(/^\u0911\u0930\u094d\u0921\u0930 #(\S+)/);
+    if (m) { let o = (window.Staff.orders || []).find(x => String(x.order_no) === m[1]);
+      if (!o) { const q = await sb.from('orders').select('*').eq('order_no', m[1]).maybeSingle(); o = q.data; }
+      if (o && UD_MARK.test(o.note || '')) { UD_MARK.lastIndex = 0; await window.Staff.update(o, { note: (o.note || '').replace(UD_MARK, '').trim() || null }); } }
+    UD_MARK.lastIndex = 0;
+  };
+  window.undoOrderUdhaar = async function (o) {
+    const { data, error } = await sb.from('pos_sales').select('*').gt('udhaar', 0).is('deleted_at', null).order('created_at', { ascending: false }).limit(300); if (error) return toast(error.message, 'err');
+    const rows = (data || []).filter(r => String(((r.items || [])[0] || {}).name || '').startsWith('\u0911\u0930\u094d\u0921\u0930 #' + o.order_no));
+    try { for (const r of rows) await window.undoUdhaarBill(r);
+      if (!rows.length) await window.Staff.update(o, { note: (o.note || '').replace(UD_MARK, '').trim() || null });
+      UD_MARK.lastIndex = 0; toast('\u0909\u0927\u093e\u0930 \u0939\u091f\u093e \u0926\u093f\u092f\u093e \u2713', 'ok'); } catch (e) { toast('\u0939\u091f\u093e\u092f\u093e \u0928\u0939\u0940\u0902 \u091c\u093e \u0938\u0915\u093e: ' + (e.message || e), 'err'); }
+  };
   window.addUdhaar = function (opts) {
     opts = opts || {}; const o = opts.order;
     const dueAmt = o ? Math.max(0, Math.round((Number(o.total) - (window.ordPay ? window.ordPay(o).c + window.ordPay(o).u : 0)) * 100) / 100) : '';
@@ -2265,7 +2288,9 @@ window.SONE_CONFIG = {
       if (error) return body.innerHTML = '<div class="empty">' + esc(error.message) + '</div>';
       if (!data.length) return body.innerHTML = '<div class="empty"><div class="big">🎉</div>Koi udhaar baaki nahi</div>';
       const tot = data.reduce((a, r) => a + Number(r.udhaar), 0);
-      body.innerHTML = `<div class="card"><div class="small muted">Kul baaki</div><div style="font-size:28px;font-weight:700;color:var(--red)">${money(tot)}</div></div><div class="list">${data.map(r => `<div class="li"><div class="grow"><div class="t">${esc(r.customer_name || 'Naam nahi')}</div><div class="s">Bill #${r.bill_no} · ${r.bill_date}${(r.items || []).length ? ' · ' + esc((r.items || []).map(i => i.name).join(', ').slice(0, 40)) : ''}</div></div><b>${money(r.udhaar)}</b><button class="btn sm green" data-rcv="${r.id}">Mil gaya</button></div>`).join('')}</div>`;
+      body.innerHTML = `<div class="card"><div class="small muted">Kul baaki</div><div style="font-size:28px;font-weight:700;color:var(--red)">${money(tot)}</div></div><div class="list">${data.map(r => `<div class="li"><div class="grow"><div class="t">${esc(r.customer_name || 'Naam nahi')}</div><div class="s">Bill #${r.bill_no} · ${r.bill_date}${(r.items || []).length ? ' · ' + esc((r.items || []).map(i => i.name).join(', ').slice(0, 40)) : ''}</div></div><b>${money(r.udhaar)}</b><button class="btn sm green" data-rcv="${r.id}">Mil gaya</button><button class="iconbtn" data-udel="${r.id}" title="हटाएँ" style="color:var(--red)">🗑</button></div>`).join('')}</div>`;
+      $$('[data-udel]', body).forEach(b => b.onclick = async () => { const r = data.find(x => x.id == b.dataset.udel); if (!await confirmBox(`${esc(r.customer_name || 'Naam nahi')} का ${money(r.udhaar)} उधार हटाएँ? (गलती से जोड़ा हो तो)`, 'हाँ, हटाएँ', true)) return;
+        try { await window.undoUdhaarBill(r); toast('उधार हटा दिया ✓', 'ok'); draw(); } catch (e) { toast('हटाया नहीं जा सका: ' + (e.message || e), 'err'); } });
       $$('[data-rcv]', body).forEach(b => b.onclick = async () => { const r = data.find(x => x.id == b.dataset.rcv); if (!await confirmBox(`${money(r.udhaar)} cash mil gaya?`, 'Haan')) return;
         const { error: e } = await sb.from('pos_sales').update({ cash: Number(r.cash) + Number(r.udhaar), udhaar: 0 }).eq('id', r.id); if (e) return toast(e.message, 'err'); toast('Udhaar clear ✓', 'ok'); draw(); });
     }
