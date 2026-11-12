@@ -1526,9 +1526,9 @@ window.SONE_CONFIG = {
   { const st2 = document.createElement('style'); st2.textContent = '.tile[data-tile]{cursor:pointer;position:relative}.tile[data-tile]::after{content:"›";position:absolute;right:14px;top:8px;font-size:24px;opacity:.45}'; document.head.appendChild(st2); }
   window.tileDetail = function (kind, ord, pos) {
     const posAmt = x => Number(x.subtotal) - Number(x.discount || 0), pay = window.ordPay, E = [];
-    const titles = { sales: 'आज की कुल बिक्री', orders: 'ऑनलाइन ऑर्डर', bills: 'काउंटर बिल', cash: 'नकद मिला', online: 'ऑनलाइन/UPI मिला' };
-    const pickO = o => kind === 'sales' || kind === 'orders' ? Number(o.total) || 0 : kind === 'cash' ? pay(o).c : kind === 'online' ? pay(o).u : 0;
-    const pickP = x => kind === 'sales' || kind === 'bills' ? posAmt(x) : kind === 'cash' ? Number(x.cash) || 0 : kind === 'online' ? Number(x.online) || 0 : 0;
+    const titles = { sales: 'आज की कुल बिक्री', orders: 'ऑनलाइन ऑर्डर', bills: 'काउंटर बिल', cash: 'नकद मिला', online: 'ऑनलाइन/UPI मिला', disc: 'आज का डिस्काउंट' };
+    const pickO = o => kind === 'sales' || kind === 'orders' ? Number(o.total) || 0 : kind === 'cash' ? pay(o).c : kind === 'online' ? pay(o).u : kind === 'disc' ? window.ordDisc(o) : 0;
+    const pickP = x => kind === 'sales' || kind === 'bills' ? posAmt(x) : kind === 'cash' ? Number(x.cash) || 0 : kind === 'online' ? Number(x.online) || 0 : kind === 'disc' ? Number(x.discount) || 0 : 0;
     (ord || []).forEach(o => { const a = pickO(o); if ((kind === 'orders' || a > 0 || (kind === 'cash' && a < 0)) && kind !== 'bills') E.push({ t: o.created_at, a, o }); });
     (pos || []).forEach(x => { const a = pickP(x); if ((kind === 'bills' || a > 0) && kind !== 'orders') E.push({ t: x.created_at, a, p: x }); });
     E.sort((x, y) => new Date(y.t) - new Date(x.t));
@@ -1546,6 +1546,8 @@ window.SONE_CONFIG = {
     $$('[data-i]', sh.el).forEach(b => b.onclick = () => { const e = E[+b.dataset.i]; if (e.o) window.orderBill(e.o); else billView(e.p); });
   };
   /* order ka cash / online hisaab: alag amount save ho to wahi, warna purana tareeka */
+  /* order me kitna discount diya: items + delivery - total (order edit/quick-discount isi tareeke se total ghatate hain) */
+  window.ordDisc = o => Math.max(0, Math.round(((o.items || []).reduce((a, i) => a + (Number(i.price) || 0) * (Number(i.qty) || 0), 0) + (Number(o.delivery_fee) || 0) - (Number(o.total) || 0)) * 100) / 100);
   window.ordPay = o => {
     const t = Number(o.total) || 0, sp = o.cash_amount != null || o.online_amount != null;
     let c = sp ? Number(o.cash_amount) || 0 : 0, u = sp ? Number(o.online_amount) || 0 : 0;
@@ -1968,15 +1970,18 @@ window.SONE_CONFIG = {
   /* ---------- dashboard ---------- */
   async function renderHome() {
     const box = $('#home'); const days = []; for (let i = 6; i >= 0; i--) days.push(dayStr(new Date(Date.now() - i * 86400e3)));
-    const [s, u] = await Promise.all([
+    const [s, u, rc] = await Promise.all([
       sb.from('pos_sales').select('*').gte('bill_date', days[0]).is('deleted_at', null),
-      sb.from('pos_sales').select('udhaar').gt('udhaar', 0).is('deleted_at', null)]);
+      sb.from('pos_sales').select('udhaar').gt('udhaar', 0).is('deleted_at', null),
+      window.getUdhaarPayments(days[6], days[6])]);
     try { await Staff.loadMenu(); } catch (e) {} SALES = s.data || []; const udhaar = (u.data || []).reduce((a, r) => a + Number(r.udhaar), 0);
     const today = days[6], ord = Staff.orders.filter(o => o.status !== 'cancelled');
     const oDay = d => ord.filter(o => dayStr(new Date(o.created_at)) === d), pDay = d => SALES.filter(x => x.bill_date === d);
     const posAmt = x => Number(x.subtotal) - Number(x.discount);
     const per = days.map(d => ({ d, online: oDay(d).reduce((a, o) => a + Number(o.total), 0), pos: pDay(d).reduce((a, x) => a + posAmt(x), 0) }));
     const T = per[6], tOrd = oDay(today), tPos = pDay(today);
+    const rcvL = (rc && rc.data) || [], rcvC = rcvL.filter(p => p.mode !== 'online').reduce((a, p) => a + Number(p.amount), 0), rcvO = rcvL.filter(p => p.mode === 'online').reduce((a, p) => a + Number(p.amount), 0);
+    const discT = tPos.reduce((a, x) => a + (Number(x.discount) || 0), 0) + tOrd.reduce((a, o) => a + window.ordDisc(o), 0);
     const newN = Staff.orders.filter(o => o.status === 'placed').length, verify = Staff.orders.filter(o => o.payment_method === 'upi' && o.payment_status === 'pending' && o.status !== 'cancelled').length;
     const cash = tPos.reduce((a, x) => a + Number(x.cash), 0) + tOrd.reduce((a, o) => a + window.ordPay(o).c, 0);
     const onl = tPos.reduce((a, x) => a + Number(x.online), 0) + tOrd.reduce((a, o) => a + window.ordPay(o).u, 0);
@@ -1999,6 +2004,8 @@ window.SONE_CONFIG = {
         <div class="tile" data-tile="bills"><div class="l">${IC('receipt','#AF52DE',28)}Counter bills (${tPos.length})</div><div class="v">${money(T.pos)}</div></div>
         <div class="tile" data-tile="cash"><div class="l">${IC('cash','#34C759',28)}Cash mila</div><div class="v">${money(cash)}</div></div>
         <div class="tile" data-tile="online"><div class="l">${IC('phone','#007AFF',28)}Online/UPI mila</div><div class="v">${money(onl)}</div></div>
+        <div class="tile" data-tile="rcv"><div class="l">${IC('book','#34C759',28)}Udhaar wasooli (aaj)</div><div class="v">${money(rcvC + rcvO)}</div><div class="xs muted">💵 ${money(rcvC)} · 📱 ${money(rcvO)}</div></div>
+        <div class="tile" data-tile="disc"><div class="l">${IC('receipt','#FF9500',28)}Aaj ka discount</div><div class="v" style="color:${discT ? 'var(--orange,#FF9500)' : 'inherit'}">${money(discT)}</div></div>
         <div class="tile" data-tile="credit" style="grid-column:span 2"><div class="l">${IC('book','#5856D6',28)}Total udhaar baaki (sab bills)</div><div class="v" style="color:${udhaar ? 'var(--red)' : 'inherit'}">${money(udhaar)}</div></div>
       </div>
       ${window.drinkCard(tOrd, tPos)}
@@ -2014,7 +2021,7 @@ window.SONE_CONFIG = {
     const sw = $('#acc-sw'); sw.onchange = async () => { const ok = await Owner.saveSettings({ accepting_orders: sw.checked }); if (!ok) sw.checked = !sw.checked; else { toast(sw.checked ? 'Online orders chalu ✓' : 'Online orders band kiye', sw.checked ? 'ok' : ''); $('#acc-sub').textContent = sw.checked ? 'Customers abhi order kar sakte hain' : 'Band hai — customers order nahi kar sakte'; } };
     const gp = $('#go-perf'); if (gp) gp.onclick = () => Staff.perfView();
     const g = $('#go-orders'); if (g) g.onclick = () => tab('orders');
-    $$('[data-tile]', box).forEach(el => el.onclick = () => { const k = el.dataset.tile; if (k === 'credit') return udhaarSheet(); window.tileDetail(k, tOrd, tPos); });
+    $$('[data-tile]', box).forEach(el => el.onclick = () => { const k = el.dataset.tile; if (k === 'credit') return udhaarSheet(); if (k === 'rcv') return window.rcvSheet(rcvL, 'Udhaar wasooli ka detail'); window.tileDetail(k, tOrd, tPos); });
     const csv = $('.chart svg'); if (csv) csv.onclick = e => { const r = csv.getBoundingClientRect(), i = Math.max(0, Math.min(6, Math.floor((e.clientX - r.left) / r.width * W / (W / 7)))); dayDetail(per[i].d, oDay, pDay, posAmt); };
     const tt = $('#top-t'); if (tt) tt.onclick = () => { Owner.topOpen = !Owner.topOpen; $('#top-b').classList.toggle('hide', !Owner.topOpen); tt.querySelector('.cv').classList.toggle('open', Owner.topOpen); };
   }
@@ -2165,9 +2172,10 @@ window.SONE_CONFIG = {
     async function load() {
       body.innerHTML = '<div class="spin"></div>';
       const from = startOfDay(day), to = new Date(from.getTime() + 86400e3);
-      const [o, p] = await Promise.all([
+      const [o, p, rc] = await Promise.all([
         sb.from('orders').select('*').gte('created_at', from.toISOString()).lt('created_at', to.toISOString()).limit(5000),
-        sb.from('pos_sales').select('*').eq('bill_date', day).is('deleted_at', null).limit(5000)]);
+        sb.from('pos_sales').select('*').eq('bill_date', day).is('deleted_at', null).limit(5000),
+        window.getUdhaarPayments(day, day)]);
       if (o.error || p.error) { body.innerHTML = '<div class="empty">' + esc((o.error || p.error).message) + '</div>'; return; }
       try { await Staff.loadMenu(); } catch (e) {}
       const all = o.data || [], ord = all.filter(x => x.status !== 'cancelled'), canc = all.length - ord.length, pos = p.data || [];
@@ -2176,7 +2184,12 @@ window.SONE_CONFIG = {
       const oAmt = sum(ord, x => Number(x.total)), pAmt = sum(pos, posAmt);
       const cash = sum(pos, x => Number(x.cash)) + sum(ord, x => window.ordPay(x).c);
       const upi = sum(pos, x => Number(x.online)) + sum(ord, x => window.ordPay(x).u);
-      const udh = sum(pos, x => Number(x.udhaar));
+      const udh = sum(pos, x => Math.max(Number(x.udhaar) || 0, Math.round((posAmt(x) - (Number(x.cash) || 0) - (Number(x.online) || 0)) * 100) / 100));
+      const rcv = (rc && rc.data) || [], rcvC = sum(rcv.filter(q => q.mode !== 'online'), q => Number(q.amount)), rcvO = sum(rcv.filter(q => q.mode === 'online'), q => Number(q.amount));
+      const discL = [];
+      pos.forEach(x => { const a = Number(x.discount) || 0; if (a > 0) discL.push({ n: (x.customer_name || 'Walk-in') + ' · #' + x.bill_no, a }); });
+      ord.forEach(x => { const a = window.ordDisc(x); if (a > 0) discL.push({ n: (x.order_type === 'dine_in' ? 'Table ' + (x.table_no || '') : (/^Table\s/i.test(x.customer_name || '') ? '' : x.customer_name || '')) + ' · #' + x.order_no, a }); });
+      const discT = sum(discL, d => d.a);
       const top = {}; ord.forEach(x => (x.items || []).forEach(i => top[i.name] = (top[i.name] || 0) + Number(i.qty))); pos.forEach(x => (x.items || []).forEach(i => top[i.name] = (top[i.name] || 0) + Number(i.qty)));
       const topL = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5);
       let staff = []; try { staff = await Staff.perfData(day, day); } catch (e) {}
@@ -2184,14 +2197,18 @@ window.SONE_CONFIG = {
       const m = money;
       const L = [
         ['Total sale', m(oAmt + pAmt), true], ['Online orders', ord.length + ' · ' + m(oAmt)], ['Counter bills', pos.length + ' · ' + m(pAmt)],
-        ['Cash mila', m(cash)], ['Online/UPI mila', m(upi)], ['Udhaar diya', m(udh)], ['Cancelled orders', String(canc)]];
+        ['Cash mila', m(cash)], ['Online/UPI mila', m(upi)], ['Discount diya', m(discT) + (discL.length ? ' (' + discL.length + ')' : '')], ['Udhaar diya', m(udh)], ['Udhaar wasool - Cash', m(rcvC)], ['Udhaar wasool - Online', m(rcvO)], ['Cancelled orders', String(canc)]];
       text = `*${C.RESTAURANT.toUpperCase()}*\n${T('Din ka hisaab')} · ${nice}\n--------------\n` + L.map(r => `${T(r[0])}: ${r[2] ? '*' + r[1] + '*' : r[1]}`).join('\n') +
         (topL.length ? `\n--------------\n*${T('Top dishes')}*\n` + topL.map((t, i) => `${i + 1}. ${t[0]} × ${t[1]}`).join('\n') : '') +
         (dr.water.q || dr.cold.q ? `\n--------------\n*${T('🥤 पानी और ठंडा')}*\n${T('पानी')}: ${dr.water.q} (${m(dr.water.amt)})\n${T('ठंडा')}: ${dr.cold.q} (${m(dr.cold.amt)})` : '') +
         (staff.length ? `\n--------------\n*${T('Staff ka hisaab')}*\n` + staff.map(r => `${r.name}: ${m(r.tkA + r.acA)} (${r.tk} + ${r.ac})`).join('\n') : '');
+      if (discL.length) text += `\n--------------\n*${T('Discount ka detail')}*\n` + discL.map(d => `${d.n}: - ${m(d.a)}`).join('\n');
+      if (rcv.length) text += `\n--------------\n*${T('Udhaar wasooli ka detail')}*\n` + rcv.map(q => `${q.customer_name || '-'} · #${q.bill_no}: ${m(q.amount)} (${q.mode === 'online' ? 'Online' : 'Cash'})`).join('\n');
       body.innerHTML = `<div class="small muted" style="padding:0 20px 8px">${esc(nice)}</div>
         <div class="tile" style="margin:0 16px 12px;background:var(--brand);color:#fff"><div class="l" style="color:rgba(255,255,255,.85)">${T('Total sale')}</div><div class="v">${m(oAmt + pAmt)}</div></div>
         <div class="list">${L.slice(1).map(r => `<div class="li"><span class="grow t">${T(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
+        ${discL.length ? `<div class="section-h">${T('Discount ka detail')}</div><div class="list">${discL.map(d => `<div class="li"><span class="grow t">${esc(d.n)}</span><b style="color:var(--orange,#FF9500)">− ${m(d.a)}</b></div>`).join('')}</div>` : ''}
+        ${rcv.length ? `<div class="section-h">${T('Udhaar wasooli ka detail')}</div><div class="list">${rcv.map(rcvRow).join('')}</div>` : ''}
         ${window.drinkCard(ord, pos)}
         ${topL.length ? `<div class="section-h">${T('Top dishes')}</div><div class="card">${topL.map((t, i) => `<div class="rank"><span class="n">${i + 1}</span><span class="grow">${esc(t[0])}</span><b>${t[1]}</b></div>`).join('')}</div>` : ''}
         ${staff.length ? `<div class="section-h">${T('Staff ka hisaab')}</div><div class="list">${staff.map(r => `<div class="li"><span class="grow t">${esc(r.name)}</span><b>${m(r.tkA + r.acA)}</b></div>`).join('')}</div>` : ''}<div style="height:12px"></div>`;
@@ -2282,18 +2299,93 @@ window.SONE_CONFIG = {
     draw();
   }
 
+
+  /* ---------- udhaar wasooli: cash ya online, kitna, kab -> udhaar_payments table me record ---------- */
+  window.SONE_X = (window.SONE_X || []).concat([
+    ["Udhaar mila", "उधार मिला", "Udhaar received", "Udhaar received", "Udhaar received", "Udhaar received", "Udhaar received", "Udhaar received"],
+    ["Baaki udhaar", "बाकी उधार", "Udhaar due", "Udhaar due", "Udhaar due", "Udhaar due", "Udhaar due", "Udhaar due"],
+    ["Kitna mila (₹)", "कितना मिला (₹)", "Amount received (₹)", "Amount received (₹)", "Amount received (₹)", "Amount received (₹)", "Amount received (₹)", "Amount received (₹)"],
+    ["Jama karein", "जमा करें", "Save", "Save", "Save", "Save", "Save", "Save"],
+    ["Wasooli (jo paisa mila)", "वसूली (जो पैसा मिला)", "Payments received", "Payments received", "Payments received", "Payments received", "Payments received", "Payments received"],
+    ["Udhaar wasooli (aaj)", "उधार वसूली (आज)", "Udhaar received (today)", "Udhaar received (today)", "Udhaar received (today)", "Udhaar received (today)", "Udhaar received (today)", "Udhaar received (today)"],
+    ["Aaj ka discount", "आज का डिस्काउंट", "Discount today", "Discount today", "Discount today", "Discount today", "Discount today", "Discount today"],
+    ["Discount diya", "डिस्काउंट दिया", "Discount given", "Discount given", "Discount given", "Discount given", "Discount given", "Discount given"],
+    ["Udhaar wasool - Cash", "उधार वसूल - नकद", "Udhaar received - Cash", "Udhaar received - Cash", "Udhaar received - Cash", "Udhaar received - Cash", "Udhaar received - Cash", "Udhaar received - Cash"],
+    ["Udhaar wasool - Online", "उधार वसूल - ऑनलाइन", "Udhaar received - Online", "Udhaar received - Online", "Udhaar received - Online", "Udhaar received - Online", "Udhaar received - Online", "Udhaar received - Online"],
+    ["Discount ka detail", "डिस्काउंट का विवरण", "Discount details", "Discount details", "Discount details", "Discount details", "Discount details", "Discount details"],
+    ["Udhaar wasooli ka detail", "उधार वसूली का विवरण", "Udhaar received details", "Udhaar received details", "Udhaar received details", "Udhaar received details", "Udhaar received details", "Udhaar received details"],
+    ["Cash", "नकद", "Cash", "Cash", "Cash", "Cash", "Cash", "Cash"],
+    ["Online/UPI", "ऑनलाइन/UPI", "Online/UPI", "Online/UPI", "Online/UPI", "Online/UPI", "Online/UPI", "Online/UPI"]
+  ]);
+  const rcvMissing = e => !!e && (e.code === '42P01' || e.code === 'PGRST205' || /udhaar_payments/i.test(e.message || ''));
+  window.getUdhaarPayments = async function (from, to, limit) {
+    try {
+      let q = sb.from('udhaar_payments').select('*').order('created_at', { ascending: false }).limit(limit || 2000);
+      if (from) q = q.gte('paid_on', from); if (to) q = q.lte('paid_on', to);
+      const { data, error } = await q;
+      if (error) return { data: [], missing: rcvMissing(error), error };
+      return { data: data || [], missing: false };
+    } catch (e) { return { data: [], missing: true, error: e }; }
+  };
+  const rcvRow = p => `<div class="li"><div class="grow"><div class="t">${esc(p.customer_name || 'Naam nahi')}</div><div class="s">Bill #${esc(p.bill_no)} · ${esc(p.paid_on)} ${fmtTime(p.created_at)} · <b style="color:${p.mode === 'online' ? 'var(--blue)' : 'var(--green)'}">${p.mode === 'online' ? '📱 Online/UPI' : '💵 Cash'}</b></div></div><b style="color:var(--green)">+ ${money(p.amount)}</b></div>`;
+  window.rcvSheet = function (list, title) {
+    const c = list.filter(p => p.mode !== 'online').reduce((a, p) => a + Number(p.amount), 0), o = list.filter(p => p.mode === 'online').reduce((a, p) => a + Number(p.amount), 0);
+    sheet(`<div class="sh-head"><h3>${esc(title || 'Udhaar wasooli ka detail')}</h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="sh-body"><div class="card"><div class="small muted">Kul mila</div><div style="font-size:28px;font-weight:700">${money(c + o)}</div>
+      <div class="row between mt8"><span class="muted">💵 Cash</span><b>${money(c)}</b></div><div class="row between mt8"><span class="muted">📱 Online/UPI</span><b>${money(o)}</b></div></div>
+      <div class="list">${list.length ? list.map(rcvRow).join('') : '<div class="empty">Koi wasooli nahi</div>'}</div></div>`, { full: true });
+  };
+  async function rcvHistory(body) {
+    const r = await window.getUdhaarPayments(null, null, 40), box = document.createElement('div');
+    box.innerHTML = r.missing ? '<div class="small muted" style="padding:14px 16px">Wasooli ki date-wise history ke liye Supabase me udhaar_payments table banayein (udhaar_payments.sql).</div>'
+      : r.data.length ? `<div class="section-h">Wasooli (jo paisa mila)</div><div class="list">${r.data.map(rcvRow).join('')}</div>` : '';
+    body.appendChild(box);
+  }
+  window.receiveUdhaar = function (r, done) {
+    const due = Math.round(Number(r.udhaar) * 100) / 100, st = { mode: 'cash' };
+    const sh = sheet(`<div class="sh-head"><h3>💰 <span>Udhaar mila</span></h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="sh-body"><div class="card"><div class="small muted">${esc(r.customer_name || 'Naam nahi')} · Bill #${esc(r.bill_no)}</div>
+      <div class="row between mt8" style="font-size:18px"><span class="muted">Baaki udhaar</span><b>${money(due)}</b></div>
+      <div class="seg mt12"><button data-pm="cash" class="active">💵 <span>Cash</span></button><button data-pm="online">📱 <span>Online/UPI</span></button></div>
+      <label class="field" style="margin:12px 0 0"><span>Kitna mila (₹)</span><input class="inp" id="rv-amt" type="number" inputmode="decimal" value="${due}"></label>
+      <div class="small muted mt8" id="rv-left"></div></div></div>
+      <div class="sh-foot"><button class="btn green block" id="rv-save">Jama karein</button></div>`, {});
+    const inp = $('#rv-amt', sh.el), amt = () => Math.round(Math.min(due, Math.max(0, parseFloat(inp.value) || 0)) * 100) / 100;
+    const left = () => { const l = Math.round((due - amt()) * 100) / 100; $('#rv-left', sh.el).textContent = l > 0 ? 'Baaki rahega: ' + money(l) : 'Poora udhaar clear ho jayega ✓'; };
+    inp.oninput = left; left();
+    $$('[data-pm]', sh.el).forEach(b => b.onclick = () => { st.mode = b.dataset.pm; $$('[data-pm]', sh.el).forEach(x => x.classList.toggle('active', x === b)); });
+    $('#rv-save', sh.el).onclick = async e => {
+      const a = amt(); if (!(a > 0)) return toast('Rakam daalein', 'err');
+      const rest = Math.round((due - a) * 100) / 100, mode = st.mode, btn = e.currentTarget; btn.disabled = true;
+      try {
+        const ins = await sb.from('udhaar_payments').insert({ sale_id: String(r.id), bill_no: r.bill_no, bill_date: r.bill_date, customer_name: r.customer_name || null, amount: a, mode, paid_on: dayStr() }).select().single();
+        const logged = !ins.error; let patch;
+        if (logged) patch = { udhaar: rest };
+        else if (rcvMissing(ins.error)) patch = mode === 'online' ? { online: Number(r.online || 0) + a, udhaar: rest } : { cash: Number(r.cash || 0) + a, udhaar: rest };
+        else throw ins.error;
+        const { error } = await sb.from('pos_sales').update(patch).eq('id', r.id);
+        if (error) { if (logged && ins.data) { try { await sb.from('udhaar_payments').delete().eq('id', ins.data.id); } catch (_) {} } throw error; }
+        sh.close();
+        toast(`${money(a)} ${mode === 'online' ? 'Online/UPI' : 'Cash'} me mila ✓` + (rest > 0 ? ` · ${money(rest)} baaki` : ' · udhaar clear'), 'ok');
+        if (logged) setTimeout(() => toast('Aaj ke hisaab me "Udhaar wasooli" me dikhega', ''), 700);
+        else setTimeout(() => toast('Date-wise record ke liye udhaar_payments table banayein', 'err'), 700);
+        if (done) done();
+        if (window.Owner && Owner.refreshHome) Owner.refreshHome();
+      } catch (err) { toast('Save nahi hua: ' + (err.message || err), 'err'); btn.disabled = false; }
+    };
+  };
   async function udhaarSheet() {
     const sh = sheet(`<div class="sh-head"><h3>Udhaar baaki</h3><button class="btn sm" id="u-add" style="margin-left:auto;margin-right:8px">＋ उधार जोड़ें</button><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="u-body"><div class="spin"></div></div>`, { full: true });
     async function draw() {
       const { data, error } = await sb.from('pos_sales').select('*').gt('udhaar', 0).is('deleted_at', null).order('created_at', { ascending: false }); const body = $('#u-body', sh.el);
       if (error) return body.innerHTML = '<div class="empty">' + esc(error.message) + '</div>';
-      if (!data.length) return body.innerHTML = '<div class="empty"><div class="big">🎉</div>Koi udhaar baaki nahi</div>';
+      if (!data.length) { body.innerHTML = '<div class="empty"><div class="big">🎉</div>Koi udhaar baaki nahi</div>'; return rcvHistory(body); }
       const tot = data.reduce((a, r) => a + Number(r.udhaar), 0);
       body.innerHTML = `<div class="card"><div class="small muted">Kul baaki</div><div style="font-size:28px;font-weight:700;color:var(--red)">${money(tot)}</div></div><div class="list">${data.map(r => `<div class="li"><div class="grow"><div class="t">${esc(r.customer_name || 'Naam nahi')}</div><div class="s">Bill #${r.bill_no} · ${r.bill_date}${(r.items || []).length ? ' · ' + esc((r.items || []).map(i => i.name).join(', ').slice(0, 40)) : ''}</div></div><b>${money(r.udhaar)}</b><button class="btn sm green" data-rcv="${r.id}">Mil gaya</button><button class="iconbtn" data-udel="${r.id}" title="हटाएँ" style="color:var(--red)">🗑</button></div>`).join('')}</div>`;
       $$('[data-udel]', body).forEach(b => b.onclick = async () => { const r = data.find(x => x.id == b.dataset.udel); if (!await confirmBox(`${esc(r.customer_name || 'Naam nahi')} का ${money(r.udhaar)} उधार हटाएँ? (गलती से जोड़ा हो तो)`, 'हाँ, हटाएँ', true)) return;
         try { await window.undoUdhaarBill(r); toast('उधार हटा दिया ✓', 'ok'); draw(); } catch (e) { toast('हटाया नहीं जा सका: ' + (e.message || e), 'err'); } });
-      $$('[data-rcv]', body).forEach(b => b.onclick = async () => { const r = data.find(x => x.id == b.dataset.rcv); if (!await confirmBox(`${money(r.udhaar)} cash mil gaya?`, 'Haan')) return;
-        const { error: e } = await sb.from('pos_sales').update({ cash: Number(r.cash) + Number(r.udhaar), udhaar: 0 }).eq('id', r.id); if (e) return toast(e.message, 'err'); toast('Udhaar clear ✓', 'ok'); draw(); });
+      $$('[data-rcv]', body).forEach(b => b.onclick = () => { const r = data.find(x => x.id == b.dataset.rcv); window.receiveUdhaar(r, draw); });
+      rcvHistory(body);
     }
     $('#u-add', sh.el).onclick = () => window.addUdhaar({ done: draw });
     draw();
