@@ -1436,7 +1436,7 @@ window.SONE_CONFIG = {
       /* ज़्यादा मिला (jaise bill 1803, customer ne 2803 diya): extra rakam "nakad wapas" maan kar cash se ghatayi jaati hai */
       let sCash = st.cash; const extra = Math.round((st.cash + st.online - pay()) * 100) / 100;
       if (extra > 0.001) { if (!await confirmBox(`${money(extra)} ${TT_('ज़्यादा मिला है। क्या ये ग्राहक को नकद वापस दिया?')}\n(${TT_('हिसाब में नकद अपने आप घटकर दर्ज होगा')})`, TT_('हाँ, वापस दिया'))) return; sCash = Math.round((st.cash - extra) * 100) / 100; }
-      const btn = e.currentTarget; btn.disabled = true;
+      const btn = $('#eb-save', sh.el);   /* await ke baad e.currentTarget null ho jata hai */ btn.disabled = true;
       try {
         const patch = { items: st.items.map(l => ({ name: String(l.name).trim(), price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: sub(), discount: st.disc, cash: sCash, online: st.online, udhaar: ud(), customer_name: st.name.trim() || null, table_no: st.table.trim() || null };
         if (st.date && st.date !== b.bill_date) {
@@ -1453,6 +1453,10 @@ window.SONE_CONFIG = {
           if (res.error.code === '23505' && patch.bill_no) { patch.bill_no++; continue; }
           if (/created_at/.test(res.error.message || '') && patch.created_at) { delete patch.created_at; continue; }
           break;
+        }
+        if (res.error && sCash < 0) {   /* DB minus cash nahi leta: cash 0 karke baaki wapsi online se ghatayein (cash+online = payable) */
+          const fb = { ...patch, cash: 0, online: Math.max(0, Math.round((st.online - (extra - st.cash)) * 100) / 100) };
+          res = await sb.from('pos_sales').update(fb).eq('id', b.id).select().single();
         }
         const { data, error } = res; if (error) throw error;
         sh.close(); toast('बिल सहेज लिया गया ✓', 'ok'); b._reload && b._reload(); billView({ ...b, ...data });
@@ -1746,7 +1750,10 @@ window.SONE_CONFIG = {
       if (extra > 0.001) { if (!await confirmBox(`${money(extra)} ${TT_('ज़्यादा मिला है। क्या ये ग्राहक को नकद वापस दिया?')}\n(${TT_('हिसाब में नकद अपने आप घटकर दर्ज होगा')})`, TT_('हाँ, वापस दिया'))) return; cashS = Math.round((cash - extra) * 100) / 100; }
       const btn = $('#bs-save', sh.el); btn.disabled = true;
       try {
-        const row = await saveBill({ items: bill.map(l => ({ name: l.name, price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: total(), discount: disc, cash: cashS, online, udhaar: ud, customer_name: ctx.name.trim() || null, table_no: ctx.table.trim() || null });
+        const base = { items: bill.map(l => ({ name: l.name, price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: total(), discount: disc, udhaar: ud, customer_name: ctx.name.trim() || null, table_no: ctx.table.trim() || null };
+        let row;
+        try { row = await saveBill({ ...base, cash: cashS, online }); }
+        catch (e1) { if (cashS < 0) row = await saveBill({ ...base, cash: 0, online: Math.max(0, Math.round((online - (extra - cash)) * 100) / 100) }); else throw e1; }
         const ph10 = ctx.phone.replace(/\D/g, '').slice(-10); if (ph10.length === 10) { row._phone = ph10; window.touchCustomer && touchCustomer(ph10, ctx.name.trim(), pay, true); }
         resetCur(); sh.close(); draw(); toast('Bill #' + row.bill_no + ' save ho gaya ✓', 'ok'); billView(row);
       } catch (e) { btn.disabled = false; const em = [e && e.message, e && e.details, e && e.hint, e && e.code].filter(Boolean).join(' | ') || String(e); console.error('bill save', e); toast('Bill save nahi hua', 'err'); confirmBox('Bill save nahi hua:\n' + em, 'OK'); }
