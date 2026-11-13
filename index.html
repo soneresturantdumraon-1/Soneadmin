@@ -1433,10 +1433,12 @@ window.SONE_CONFIG = {
       if (!st.items.length) return toast('कम से कम एक आइटम चाहिए', 'err');
       if (st.items.some(l => !String(l.name).trim() || !(l.price > 0) || !(l.qty >= 1))) return toast('हर आइटम का नाम, कीमत और मात्रा सही भरें', 'err');
       if (ud() > 0 && !st.name.trim()) return toast('उधार के लिए ग्राहक का नाम ज़रूरी है', 'err');
-      if (st.cash + st.online > pay() + 0.001 && !await confirmBox('नकद + ऑनलाइन देय राशि से ज़्यादा है। फिर भी सहेजें?', 'हाँ')) return;
+      /* ज़्यादा मिला (jaise bill 1803, customer ne 2803 diya): extra rakam "nakad wapas" maan kar cash se ghatayi jaati hai */
+      let sCash = st.cash; const extra = Math.round((st.cash + st.online - pay()) * 100) / 100;
+      if (extra > 0.001) { if (!await confirmBox(`${money(extra)} ${TT_('ज़्यादा मिला है। क्या ये ग्राहक को नकद वापस दिया?')}\n(${TT_('हिसाब में नकद अपने आप घटकर दर्ज होगा')})`, TT_('हाँ, वापस दिया'))) return; sCash = Math.round((st.cash - extra) * 100) / 100; }
       const btn = e.currentTarget; btn.disabled = true;
       try {
-        const patch = { items: st.items.map(l => ({ name: String(l.name).trim(), price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: sub(), discount: st.disc, cash: st.cash, online: st.online, udhaar: ud(), customer_name: st.name.trim() || null, table_no: st.table.trim() || null };
+        const patch = { items: st.items.map(l => ({ name: String(l.name).trim(), price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: sub(), discount: st.disc, cash: sCash, online: st.online, udhaar: ud(), customer_name: st.name.trim() || null, table_no: st.table.trim() || null };
         if (st.date && st.date !== b.bill_date) {
           if (!/^\d{4}-\d{2}-\d{2}$/.test(st.date) || st.date > dayStr()) { btn.disabled = false; return toast('सही तारीख चुनें', 'err'); }
           const old = new Date(b.created_at || Date.now()), [yy, mm, dd] = st.date.split('-').map(Number);
@@ -1454,7 +1456,7 @@ window.SONE_CONFIG = {
         }
         const { data, error } = res; if (error) throw error;
         sh.close(); toast('बिल सहेज लिया गया ✓', 'ok'); b._reload && b._reload(); billView({ ...b, ...data });
-      } catch (err) { btn.disabled = false; toast('बिल सहेजा नहीं जा सका: ' + (err.message || err), 'err'); }
+      } catch (err) { btn.disabled = false; const em = [err && err.message, err && err.details, err && err.hint, err && err.code].filter(Boolean).join(' | ') || String(err); console.error('bill save', err); toast('बिल सहेजा नहीं जा सका', 'err'); confirmBox('बिल सहेजा नहीं जा सका:\n' + em, 'OK'); }
     };
     render();
   }
@@ -1740,13 +1742,14 @@ window.SONE_CONFIG = {
       keep(); if (!bill.length) return; const pay = payable(), ud = Math.max(0, pay - cash - online);
       if (ctx.phone.trim() && ctx.phone.replace(/\D/g, '').length < 10) return toast('10 digit mobile number likhein', 'err');
       if (ud > 0 && !ctx.name.trim()) return toast('Udhaar ke liye customer ka naam zaroori hai', 'err');
-      if (cash + online > pay + 0.001) { if (!await confirmBox('Cash + Online payable se zyada hai. Phir bhi save karein?', 'Haan')) return; }
+      let cashS = cash; const extra = Math.round((cash + online - pay) * 100) / 100;
+      if (extra > 0.001) { if (!await confirmBox(`${money(extra)} ${TT_('ज़्यादा मिला है। क्या ये ग्राहक को नकद वापस दिया?')}\n(${TT_('हिसाब में नकद अपने आप घटकर दर्ज होगा')})`, TT_('हाँ, वापस दिया'))) return; cashS = Math.round((cash - extra) * 100) / 100; }
       const btn = $('#bs-save', sh.el); btn.disabled = true;
       try {
-        const row = await saveBill({ items: bill.map(l => ({ name: l.name, price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: total(), discount: disc, cash, online, udhaar: ud, customer_name: ctx.name.trim() || null, table_no: ctx.table.trim() || null });
+        const row = await saveBill({ items: bill.map(l => ({ name: l.name, price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: total(), discount: disc, cash: cashS, online, udhaar: ud, customer_name: ctx.name.trim() || null, table_no: ctx.table.trim() || null });
         const ph10 = ctx.phone.replace(/\D/g, '').slice(-10); if (ph10.length === 10) { row._phone = ph10; window.touchCustomer && touchCustomer(ph10, ctx.name.trim(), pay, true); }
         resetCur(); sh.close(); draw(); toast('Bill #' + row.bill_no + ' save ho gaya ✓', 'ok'); billView(row);
-      } catch (e) { btn.disabled = false; toast('Bill save nahi hua: ' + (e.message || e), 'err'); }
+      } catch (e) { btn.disabled = false; const em = [e && e.message, e && e.details, e && e.hint, e && e.code].filter(Boolean).join(' | ') || String(e); console.error('bill save', e); toast('Bill save nahi hua', 'err'); confirmBox('Bill save nahi hua:\n' + em, 'OK'); }
     };
     render();
   }
@@ -2316,6 +2319,11 @@ window.SONE_CONFIG = {
     ["Udhaar wasooli ka detail", "उधार वसूली का विवरण", "Udhaar received details", "Udhaar received details", "Udhaar received details", "Udhaar received details", "Udhaar received details", "Udhaar received details"],
     ["Cash", "नकद", "Cash", "Cash", "Cash", "Cash", "Cash", "Cash"],
     ["Online/UPI", "ऑनलाइन/UPI", "Online/UPI", "Online/UPI", "Online/UPI", "Online/UPI", "Online/UPI", "Online/UPI"]
+  ]);
+  window.SONE_X = (window.SONE_X || []).concat([
+    ["ज़्यादा मिला है। क्या ये ग्राहक को नकद वापस दिया?", "ज़्यादा मिला है। क्या ये ग्राहक को नकद वापस दिया?", "received extra. Was this returned to the customer in cash?", "received extra. Was this returned to the customer in cash?", "received extra. Was this returned to the customer in cash?", "received extra. Was this returned to the customer in cash?", "received extra. Was this returned to the customer in cash?", "received extra. Was this returned to the customer in cash?"],
+    ["हाँ, वापस दिया", "हाँ, वापस दिया", "Yes, returned", "Yes, returned", "Yes, returned", "Yes, returned", "Yes, returned", "Yes, returned"],
+    ["हिसाब में नकद अपने आप घटकर दर्ज होगा", "हिसाब में नकद अपने आप घटकर दर्ज होगा", "Cash will be reduced automatically in the accounts", "Cash will be reduced automatically in the accounts", "Cash will be reduced automatically in the accounts", "Cash will be reduced automatically in the accounts", "Cash will be reduced automatically in the accounts", "Cash will be reduced automatically in the accounts"]
   ]);
   const rcvMissing = e => !!e && (e.code === '42P01' || e.code === 'PGRST205' || /udhaar_payments/i.test(e.message || ''));
   window.getUdhaarPayments = async function (from, to, limit) {
