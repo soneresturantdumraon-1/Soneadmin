@@ -571,7 +571,72 @@ window.soneUpdate=async function(){
     svg: function (text, px) { var q = make(text), N = q.n + 8, d = ''; for (var r = 0; r < q.n; r++) for (var k = 0; k < q.n; k++) if (q.m[r][k]) d += 'M' + (k + 4) + ' ' + (r + 4) + 'h1v1h-1z'; return '<svg xmlns="http://www.w3.org/2000/svg" width="' + px + '" height="' + px + '" viewBox="0 0 ' + N + ' ' + N + '" shape-rendering="crispEdges"><rect width="' + N + '" height="' + N + '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>'; }
   };
 })();
-</script></head>
+</script><style id="pro-ui">
+/* ===== Pro UI: dashboard / settings / desktop layout ===== */
+:root{--c-counter:#2a78d6;--c-online:#eb6834;--c-cash:#1baf7a;--c-upi:#6250d6;--c-udh:#eda100;--grid:rgba(60,60,67,.12)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--c-counter:#3987e5;--c-online:#d95926;--c-cash:#199e70;--c-upi:#9085e9;--c-udh:#c98500;--grid:rgba(235,235,245,.14)}}
+:root[data-theme="dark"]{--c-counter:#3987e5;--c-online:#d95926;--c-cash:#199e70;--c-upi:#9085e9;--c-udh:#c98500;--grid:rgba(235,235,245,.14)}
+#app main.view{max-width:1240px;margin-left:auto;margin-right:auto}
+.dash{padding:0 16px 28px}
+.dash .card{margin:0 0 12px;padding:14px 16px}
+.dash .section-h{padding:14px 2px 8px}
+.dash .tiles{padding:0;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.dash .tile{padding:12px 14px;border-radius:14px}
+.dash .tile .v{font-size:21px;margin-top:6px;letter-spacing:-.4px}
+.dash .tile .l{font-size:12.5px;gap:8px;line-height:1.25}
+.dash .tile[data-tile]::after{right:10px;top:6px;font-size:20px}
+.dash-main{display:grid;grid-template-columns:minmax(0,1fr);gap:0 18px}
+.hero{position:relative;border-radius:18px;padding:16px 18px;margin-bottom:10px;color:#fff;cursor:pointer;overflow:hidden;background:linear-gradient(135deg,#4655C7 0%,#6B7BEA 100%)}
+.hero .l{font-size:13px;opacity:.9;display:flex;align-items:center;gap:8px}
+.dash .tile.hero .l{color:rgba(255,255,255,.95);font-size:13px}.dash .tile.hero .v{font-size:32px;margin-top:4px}.dash .tile.hero{padding:16px 18px;border-radius:18px}
+.hero .v{font-size:32px;font-weight:700;letter-spacing:-.8px;margin-top:4px;font-variant-numeric:tabular-nums}
+.hero .dl{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:12.5px;font-weight:600;background:rgba(255,255,255,.2);padding:3px 9px;border-radius:12px}
+.hero .sp{position:absolute;right:12px;bottom:10px;width:46%;height:54px;opacity:.95}
+.vz-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.vz-h b{font-size:15px}.vz-h span{font-size:12px;color:var(--label2)}
+.vz svg{display:block;width:100%;height:auto;overflow:visible}
+.vz text{fill:var(--label2);font-size:11px;font-family:var(--font);font-variant-numeric:tabular-nums}
+.vz .gl{stroke:var(--grid);stroke-width:1}
+.vz .hit{fill:transparent;cursor:pointer}
+.vz .hit:hover{fill:rgba(128,128,128,.10)}
+.vz-lg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--label2);margin-top:8px}
+.vz-lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.mix{display:flex;align-items:center;gap:16px}.mix svg{width:132px;height:132px;flex:none}
+.mix-l{flex:1;min-width:0;font-size:13px}.mix-l .r{display:flex;align-items:center;gap:8px;padding:5px 0}.mix-l .r+.r{border-top:.5px solid var(--sep)}
+.mix-l .r i{width:10px;height:10px;border-radius:3px;flex:none}.mix-l .r b{margin-left:auto;font-variant-numeric:tabular-nums}.mix-l .r em{font-style:normal;color:var(--label2);min-width:38px;text-align:right}
+.dish{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:7px 0;font-size:13.5px}
+.dish+.dish{border-top:.5px solid var(--sep)}.dish .n{color:var(--label2);font-weight:600;font-size:12px}
+.dish .bar{grid-column:2/4;height:5px;border-radius:3px;background:var(--grid);overflow:hidden}.dish .bar i{display:block;height:100%;border-radius:3px;background:var(--brand)}
+#vz-tip{position:fixed;z-index:400;pointer-events:none;background:rgba(28,28,30,.96);color:#fff;font-size:12.5px;line-height:1.45;padding:8px 11px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.3);white-space:pre;display:none}
+/* settings */
+.set-wrap{padding:0 16px 28px}
+.set-me{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:16px;padding:14px 16px;margin:12px 0 4px}
+.set-me .av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#4655C7,#6B7BEA);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;flex:none}
+.set-grp{font-size:12.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--label2);padding:18px 2px 8px;display:flex;align-items:center;gap:8px}
+.set-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.mi{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:14px;padding:11px 14px;text-align:left;width:100%;min-height:58px;transition:transform .12s,box-shadow .12s;box-shadow:0 0 0 .5px rgba(0,0,0,.04)}
+.mi:hover{box-shadow:0 4px 14px rgba(0,0,0,.08)}.mi:active{transform:scale(.985)}
+.mi .t{flex:1;min-width:0;font-size:14px;font-weight:500;line-height:1.3}.mi .s{display:block;font-size:12px;color:var(--label2);font-weight:400}
+.mi .c{color:var(--label3);font-size:20px}
+.mi.row{cursor:default}
+/* desktop: left sidebar + compact layout */
+@media (min-width:1000px){
+  .dash-main{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);align-items:start}
+  .dash .tiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .navbar{padding-left:24px;padding-right:24px}
+  .view>div[id]:not(#home):not(#more){max-width:1100px;margin-left:auto;margin-right:auto}
+}
+@media (min-width:1500px){#app main.view{max-width:1400px}}
+/* side menu sirf mouse wale computer par; phone/tablet (touch) par tab neeche hi rahe */
+@media (min-width:1000px) and (hover:hover) and (pointer:fine){
+  #app{padding-left:92px}
+  .tabbar{top:0;bottom:0;left:0;right:auto;width:92px;flex-direction:column;justify-content:flex-start;gap:6px;padding:18px 6px;border-top:0!important;border-right:.5px solid var(--sep)}
+  .tabbar button{flex:none;padding:10px 0;border-radius:12px;font-size:11px}
+  .tabbar button.active{background:rgba(91,108,224,.12)}
+  #ob-pill{left:108px!important;bottom:16px!important}
+}
+</style>
+</head>
 <body>
 <div id="login" class="hide"></div>
 <div id="app" class="hide">
@@ -2055,6 +2120,46 @@ window.SONE_CONFIG = {
   };
 
   /* ---------- dashboard ---------- */
+
+  /* ---------- charts (plain SVG, hover tooltip, direct labels) ---------- */
+  const vzK = v => v >= 1000 ? '₹' + (Math.round(v / 100) / 10) + 'k' : '₹' + Math.round(v);
+  const niceStep = x => { const e = Math.pow(10, Math.floor(Math.log10(x || 1))), f = x / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; };
+  let vzTipEl; const vzShow = (e, t) => { if (!vzTipEl) { vzTipEl = document.createElement('div'); vzTipEl.id = 'vz-tip'; document.body.appendChild(vzTipEl); }
+    vzTipEl.textContent = t; vzTipEl.style.display = 'block'; const w = vzTipEl.offsetWidth, h = vzTipEl.offsetHeight; let x = e.clientX + 14, y = e.clientY - h - 10; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y < 6) y = e.clientY + 16; vzTipEl.style.left = x + 'px'; vzTipEl.style.top = y + 'px'; };
+  const vzHide = () => { if (vzTipEl) vzTipEl.style.display = 'none'; };
+  const vzBind = root => $$('[data-tip]', root).forEach(el => { el.onmouseenter = el.onmousemove = e => vzShow(e, el.dataset.tip); el.onmouseleave = vzHide; el.ontouchstart = e => { vzShow(e.touches[0], el.dataset.tip); setTimeout(vzHide, 2200); }; });
+  const wk = d => new Date(d + 'T12:00:00').toLocaleDateString((window.SONE_LANGCODE || 'en-IN') + '-u-nu-latn', { weekday: 'short' });
+  const stackBars = (rows, o) => {   /* rows: [{k,a,b,tip,hl,label,sub,day}] a=counter (neeche), b=online (upar) */
+    const W = o.W, H = o.H, L = 38, R = 8, T = 12, B = o.sub ? 36 : 24, iw = W - L - R, ih = H - T - B, n = rows.length, slot = iw / n, bw = Math.min(o.maxBw || 44, slot * .6);
+    const mx = Math.max(1, ...rows.map(r => r.a + r.b)), step = niceStep(mx / 4), top = Math.max(step, Math.ceil(mx / step) * step), Y = v => T + ih - v / top * ih;
+    let g = ''; for (let v = 0; v <= top + 1e-6; v += step) g += `<line class="gl" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${vzK(v)}</text>`;
+    const bi = rows.reduce((m, r, i) => (r.a + r.b) > (rows[m].a + rows[m].b) ? i : m, 0);
+    const bars = rows.map((r, i) => { const x = L + i * slot + (slot - bw) / 2, ha = r.a / top * ih, hb = r.b / top * ih, yb = Y(r.a + r.b), op = r.hl ? 1 : .62;
+      const A = r.a > 0 ? `<rect x="${x}" y="${Y(r.a)}" width="${bw}" height="${Math.max(2, ha)}" rx="3" fill="var(--c-counter)" opacity="${op}"/>` : '';
+      const Bz = r.b > 0 ? `<rect x="${x}" y="${yb}" width="${bw}" height="${Math.max(2, hb - (r.a > 0 ? 2 : 0))}" rx="3" fill="var(--c-online)" opacity="${op}"/>` : '';
+      const lab = (r.hl || i === bi) && (r.a + r.b) > 0 ? `<text x="${x + bw / 2}" y="${yb - 5}" text-anchor="middle" style="font-weight:${r.hl ? 700 : 500};fill:var(--label)">${vzK(r.a + r.b)}</text>` : '';
+      return `${A}${Bz}${lab}<text x="${x + bw / 2}" y="${H - B + 15}" text-anchor="middle" style="${r.hl ? 'font-weight:700;fill:var(--label)' : ''}">${esc(r.label)}</text>${o.sub ? `<text x="${x + bw / 2}" y="${H - B + 28}" text-anchor="middle" style="font-size:10px;opacity:.75">${esc(r.sub)}</text>` : ''}<rect class="hit" x="${L + i * slot}" y="${T}" width="${slot}" height="${ih + B}" data-tip="${esc(r.tip)}" ${r.day ? `data-day="${r.day}"` : ''}/>`; }).join('');
+    let avg = ''; if (o.avg) { const av = rows.reduce((t, r) => t + r.a + r.b, 0) / n; if (av > 0) avg = `<line x1="${L}" x2="${W - R}" y1="${Y(av)}" y2="${Y(av)}" stroke="var(--label2)" stroke-width="1" stroke-dasharray="4 4" opacity=".7"/><text x="${W - R}" y="${Y(av) - 4}" text-anchor="end" style="font-size:10px">${o.avg} ${vzK(av)}</text>`; }
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria || '')}">${g}${bars}${avg}</svg>`;
+  };
+  const donut = parts => {
+    const tot = parts.reduce((a, p) => a + p.v, 0), R = 46, C = 2 * Math.PI * R; let off = 0, arcs = '';
+    if (tot > 0) parts.filter(p => p.v > 0).forEach(p => { const len = p.v / tot * C, gap = parts.filter(q => q.v > 0).length > 1 ? 2.5 : 0;
+      arcs += `<circle cx="66" cy="66" r="${R}" fill="none" stroke="${p.c}" stroke-width="18" stroke-dasharray="${Math.max(0, len - gap)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 66 66)" data-tip="${esc(p.n + ' · ' + money(p.v) + ' (' + Math.round(p.v / tot * 100) + '%)')}" style="cursor:default"/>`; off += len; });
+    else arcs = `<circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--grid)" stroke-width="18"/>`;
+    return `<svg viewBox="0 0 132 132"><circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--grid)" stroke-width="18" opacity=".35"/>${arcs}<text x="66" y="63" text-anchor="middle" style="font-size:10.5px">${esc(TT_('Kul mila'))}</text><text x="66" y="80" text-anchor="middle" style="font-size:15px;font-weight:700;fill:var(--label)">${vzK(tot)}</text></svg>`;
+  };
+  const gauge = (pct, label, sub) => {   /* aadha gol meter */
+    const R = 70, C = Math.PI * R, v = Math.max(0, Math.min(100, pct)) / 100;
+    return `<svg viewBox="0 0 180 112"><defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#6B7BEA"/><stop offset="1" stop-color="#34C759"/></linearGradient></defs>
+      <path d="M20 96 A70 70 0 0 1 160 96" fill="none" stroke="var(--grid)" stroke-width="15" stroke-linecap="round"/>
+      <path d="M20 96 A70 70 0 0 1 160 96" fill="none" stroke="url(#gg)" stroke-width="15" stroke-linecap="round" stroke-dasharray="${(C * v).toFixed(1)} ${C.toFixed(1)}" data-tip="${esc(sub)}"/>
+      <text x="90" y="82" text-anchor="middle" style="font-size:30px;font-weight:700;fill:var(--label)">${Math.round(pct)}%</text>
+      <text x="90" y="104" text-anchor="middle" style="font-size:11px">${esc(label)}</text></svg>`;
+  };
+  const spark = vals => { const mx = Math.max(1, ...vals), n = vals.length, P = vals.map((v, i) => [i / (n - 1) * 100, 34 - v / mx * 30]);
+    return `<svg class="sp" viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M0 40 L${P.map(q => q.join(' ')).join(' L')} L100 40 Z" fill="rgba(255,255,255,.16)"/><polyline points="${P.map(q => q.join(',')).join(' ')}" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/><circle cx="${P[n - 1][0]}" cy="${P[n - 1][1]}" r="2.6" fill="#fff" vector-effect="non-scaling-stroke"/></svg>`; };
+  let _wide = innerWidth >= 700; addEventListener('resize', () => { const w = innerWidth >= 700; if (w !== _wide) { _wide = w; if (window.Owner && Owner.tab === 'home') renderHome(); } });
   async function renderHome() {
     const box = $('#home');
     /* upar calendar se chuna din (hd): poora dashboard usi din ka dikhta hai */
@@ -2088,45 +2193,67 @@ window.SONE_CONFIG = {
     const onl = tPos.reduce((a, x) => a + Number(x.online), 0) + tOrd.reduce((a, o) => a + window.ordPay(o).u, 0);
     const top = {}; tOrd.forEach(o => (o.items || []).forEach(i => top[i.name] = (top[i.name] || 0) + i.qty)); tPos.forEach(x => (x.items || []).forEach(i => top[i.name] = (top[i.name] || 0) + i.qty));
     const topL = Object.entries(top).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    const max = Math.max(1, ...per.map(p => p.online + p.pos)), W = 320, H = 146, bw = 30, gap = (W - 7 * bw) / 8, BASE = 118, MH = 78;
-    const fmt = v => v >= 1000 ? '₹' + (Math.round(v / 100) / 10) + 'k' : '₹' + Math.round(v);
-    const bars = per.map((p, i) => { const x = gap + i * (bw + gap), tot = p.pos + p.online, ht = tot ? Math.max(3, tot / max * MH) : 0, hp = p.pos ? Math.max(3, p.pos / max * MH) : 0, td = i === 6, dn = new Date(p.d).toLocaleDateString((window.SONE_LANGCODE || 'en-IN') + '-u-nu-latn', { weekday: 'short' }).slice(0, 3);
-      return `<g class="${td ? 'today' : 'old'}">${ht ? `<rect class="bar2" x="${x}" y="${BASE - ht}" width="${bw}" height="${ht}" rx="4"/>` : ''}${hp ? `<rect class="bar" x="${x}" y="${BASE - hp}" width="${bw}" height="${hp}" rx="4"/>` : ''}</g>
-        <text x="${x + bw / 2}" y="${BASE + 15}" text-anchor="middle" style="${td ? 'font-weight:700;fill:var(--label)' : ''}">${dn}</text>${tot ? `<text x="${x + bw / 2}" y="${BASE - ht - 5}" text-anchor="middle" style="font-weight:${td ? 700 : 500}">${fmt(tot)}</text>` : `<text x="${x + bw / 2}" y="${BASE - 5}" text-anchor="middle" style="opacity:.5">–</text>`}`; }).join('');
     const on = String(Owner.SET.accepting_orders) !== 'false';
-    box.innerHTML = `
+    /* ---- chart data ---- */
+    const wide = innerWidth >= 700;
+    const weekRows = per.map((p, i) => ({ a: p.pos, b: p.online, hl: i === 6, day: p.d, label: wk(p.d), sub: p.d.slice(8) + '/' + p.d.slice(5, 7),
+      tip: new Date(p.d + 'T12:00:00').toLocaleDateString((window.SONE_LANGCODE || 'en-IN') + '-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'short' }) + '\n' + TT_('Counter') + ': ' + money(p.pos) + '\n' + TT_('Online') + ': ' + money(p.online) + '\n' + TT_('Kul') + ': ' + money(p.pos + p.online) }));
+    const udhD = tPos.reduce((a, x) => a + Math.max(Number(x.udhaar) || 0, Math.round((posAmt(x) - (Number(x.cash) || 0) - (Number(x.online) || 0)) * 100) / 100), 0);
+    const mixParts = [{ n: TT_('Cash'), v: Math.max(0, cash), c: 'var(--c-cash)' }, { n: TT_('Online/UPI'), v: Math.max(0, onl), c: 'var(--c-upi)' }, { n: TT_('Udhaar diya'), v: Math.max(0, udhD), c: 'var(--c-udh)' }];
+    const mixTot = mixParts.reduce((a, q) => a + q.v, 0);
+    const prevTot = per[5].online + per[5].pos, curTot = T.online + T.pos, dPct = prevTot > 0 ? Math.round((curTot - prevTot) / prevTot * 100) : null;
+    const delta = dPct === null ? '' : `<span class="dl">${dPct >= 0 ? '▲' : '▼'} ${Math.abs(dPct)}% ${TT_('pichhle din se')}</span>`;
+    const topMax = topL.length ? topL[0][1] : 1;
+    const prevSales = per.slice(0, 6).map(q => q.online + q.pos).filter(v => v > 0), tgt = prevSales.length ? Math.round(prevSales.reduce((x, y) => x + y, 0) / prevSales.length) : 0, tgtPct = tgt ? curTot / tgt * 100 : 0;
+    const chDef = [['counter', TT_('Counter'), 'var(--c-counter)'], ['dine_in', TT_('Dine-in'), 'var(--c-cash)'], ['pickup', TT_('Pickup'), 'var(--c-upi)'], ['delivery', TT_('Delivery'), 'var(--c-online)']];
+    const chRows = chDef.map(([k, n, c]) => { const L = k === 'counter' ? tPos : tOrd.filter(o => o.order_type === k); return { n, c, cnt: L.length, v: k === 'counter' ? T.pos : L.reduce((a, o) => a + (Number(o.total) || 0), 0) }; });
+    const chTot = chRows.reduce((a, q) => a + q.v, 0); let _x = 0;
+    const chBar = chRows.filter(q => q.v > 0).map(q => { const w = q.v / chTot * 300; const r = `<rect x="${_x}" y="0" width="${Math.max(0, w - 2)}" height="16" rx="5" fill="${q.c}" data-tip="${esc(q.n + ' · ' + money(q.v) + ' (' + Math.round(q.v / chTot * 100) + '%)')}"/>`; _x += w; return r; }).join('');
+    const tile = (k, ic, col, lbl, val, extra, st) => `<div class="tile" data-tile="${k}"${st ? ` style="${st}"` : ''}><div class="l">${IC(ic, col, 26)}<span>${lbl}</span></div><div class="v"${extra && extra.vs ? ` style="${extra.vs}"` : ''}>${val}</div>${extra && extra.sub ? `<div class="xs muted" style="margin-top:2px">${extra.sub}</div>` : ''}</div>`;
+    box.innerHTML = `<div class="dash">
       <div class="card" style="margin-top:12px"><div class="row between"><div class="row" style="gap:12px;min-width:0">${IC('globe','#34C759')}<div><div class="bold">Online ordering</div><div class="small muted" id="acc-sub">${on ? 'Customers abhi order kar sakte hain' : 'Band hai — customers order nahi kar sakte'}</div></div>
         </div><label class="sw"><input type="checkbox" id="acc-sw" ${on ? 'checked' : ''}><i></i></label></div></div>
       ${newN || verify ? `<div class="card" style="background:rgba(255,149,0,.12)"><button class="row between" id="go-orders" style="width:100%;text-align:left"><div><div class="bold">${newN ? `🔔 ${newN} naya order` : ''}${newN && verify ? ' · ' : ''}${verify ? `💳 ${verify} UPI payment verify karni hai` : ''}</div><div class="small muted">Dekhne ke liye tap karein</div></div><span class="muted">›</span></button></div>` : ''}
       ${isToday ? '' : `<div class="card" style="background:rgba(91,108,224,.12)"><div class="row between" style="gap:10px"><div><div class="bold">📅 ${esc(nice)}</div><div class="small muted">${TT_('Is din ka poora dashboard')}</div></div><div class="row gap8"><button class="btn sec" id="go-rep" style="min-height:36px;padding:6px 12px">${TT_('Poori report')}</button><button class="btn" id="go-today" style="min-height:36px;padding:6px 12px">${TT_('Aaj par wapas')}</button></div></div></div>`}
-      <div class="section-h" style="padding-top:6px">${IC('rupee','#5B6CE0',20)}${isToday ? 'Aaj ka hisaab' : esc(nice)}</div>
-      <div class="tiles">
-        <div class="tile" data-tile="sales" style="grid-column:span 2;background:var(--brand);color:#fff"><div class="l" style="color:rgba(255,255,255,.85)">${IC('rupee','rgba(255,255,255,.28)',28)}${Lb('Aaj ki kul sale', 'Kul sale')}</div><div class="v">${money(T.online + T.pos)}</div></div>
-        <div class="tile" data-tile="orders"><div class="l">${IC('bag','#30B0C7',28)}Online orders (${tOrd.length})</div><div class="v">${money(T.online)}</div></div>
-        <div class="tile" data-tile="bills"><div class="l">${IC('receipt','#AF52DE',28)}Counter bills (${tPos.length})</div><div class="v">${money(T.pos)}</div></div>
-        <div class="tile" data-tile="cash"><div class="l">${IC('cash','#34C759',28)}Cash mila</div><div class="v">${money(cash)}</div></div>
-        <div class="tile" data-tile="online"><div class="l">${IC('phone','#007AFF',28)}Online/UPI mila</div><div class="v">${money(onl)}</div></div>
-        <div class="tile" data-tile="rcv"><div class="l">${IC('book','#34C759',28)}${Lb('Udhaar wasooli (aaj)', 'Udhaar wasooli')}</div><div class="v">${money(rcvC + rcvO)}</div><div class="xs muted">💵 ${money(rcvC)} · 📱 ${money(rcvO)}</div></div>
-        <div class="tile" data-tile="disc"><div class="l">${IC('receipt','#FF9500',28)}${Lb('Aaj ka discount', 'Discount')}</div><div class="v" style="color:${discT ? 'var(--orange,#FF9500)' : 'inherit'}">${money(discT)}</div></div>
-        <div class="tile" data-tile="credit" style="grid-column:span 2"><div class="l">${IC('book','#5856D6',28)}Total udhaar baaki (sab bills)</div><div class="v" style="color:${udhaar ? 'var(--red)' : 'inherit'}">${money(udhaar)}</div></div>
+      <div class="dash-main">
+       <div class="dash-l">
+        <div class="section-h">${IC('rupee','#5B6CE0',20)}${isToday ? 'Aaj ka hisaab' : esc(nice)}</div>
+        <div class="tile hero" data-tile="sales"><div class="l">${IC('rupee','rgba(255,255,255,.28)',26)}<span>${Lb('Aaj ki kul sale', 'Kul sale')}</span></div><div class="v">${money(curTot)}</div>${delta}${spark(per.map(q => q.online + q.pos))}</div>
+        <div class="tiles">
+          ${tile('orders', 'bag', '#30B0C7', `Online orders (${tOrd.length})`, money(T.online))}
+          ${tile('bills', 'receipt', '#AF52DE', `Counter bills (${tPos.length})`, money(T.pos))}
+          ${tile('cash', 'cash', '#34C759', 'Cash mila', money(cash))}
+          ${tile('online', 'phone', '#007AFF', 'Online/UPI mila', money(onl))}
+          ${tile('rcv', 'book', '#34C759', Lb('Udhaar wasooli (aaj)', 'Udhaar wasooli'), money(rcvC + rcvO), { sub: `💵 ${money(rcvC)} · 📱 ${money(rcvO)}` })}
+          ${tile('disc', 'receipt', '#FF9500', Lb('Aaj ka discount', 'Discount'), money(discT), { vs: discT ? 'color:var(--orange,#FF9500)' : '' })}
+          ${tile('credit', 'book', '#5856D6', 'Total udhaar baaki (sab bills)', money(udhaar), { vs: udhaar ? 'color:var(--red)' : '' }, 'grid-column:1/-1')}
+        </div>
+        <div class="card vz"><div class="vz-h"><b>${IC('chart','#007AFF',20)} ${TT_('Pichhle 7 din')}</b><span>${TT_('Bar dabayein = us din ka detail')}</span></div>
+          ${stackBars(weekRows, { W: wide ? 600 : 340, H: wide ? 230 : 210, sub: true, avg: TT_('Avg'), aria: '7 din ki sale' })}
+          <div class="vz-lg"><span><i style="background:var(--c-counter)"></i>Counter</span><span><i style="background:var(--c-online)"></i>Online</span></div></div>
+       </div>
+       <div class="dash-r">
+        <div class="section-h">${IC('cash','#34C759',20)}${TT_('Payment kaise mila')}</div>
+        <div class="card vz"><div class="mix">${donut(mixParts)}<div class="mix-l">${mixParts.map(q => `<div class="r"><i style="background:${q.c}"></i><span>${q.n}</span><b>${money(q.v)}</b><em>${mixTot ? Math.round(q.v / mixTot * 100) : 0}%</em></div>`).join('')}</div></div></div>
+        <div class="section-h">${IC('flame','#FF9500',20)}${TT_('Aaj ka target')}</div>
+        <div class="card vz">${tgt > 0 ? `<div style="max-width:300px;margin:0 auto">${gauge(tgtPct, money(curTot) + ' / ' + money(tgt), TT_('Target = pichhle 6 din ka average'))}</div>
+          <div style="text-align:center;font-size:13px;margin-top:2px"><b>${tgtPct >= 100 ? '🎉 ' + TT_('Target pura!') : money(Math.max(0, Math.round(tgt - curTot))) + ' ' + TT_('aur chahiye')}</b></div><div class="xs muted" style="text-align:center;margin-top:2px">${TT_('Target = pichhle 6 din ka average')}</div>` : `<div class="muted small" style="padding:16px 0;text-align:center">${TT_('Target ke liye abhi data kam hai')}</div>`}</div>
+        <div class="section-h">${IC('bag','#30B0C7',20)}${TT_('Bikri kahan se aayi')}</div>
+        <div class="card vz">${chTot > 0 ? `<svg viewBox="0 0 300 16" style="margin:4px 0 12px">${chBar}</svg>` : ''}${chRows.map(q => `<div class="mix-l"><div class="r"><i style="background:${q.c}"></i><span>${q.n}</span><span class="xs muted">${q.cnt}</span><b>${money(q.v)}</b><em>${chTot ? Math.round(q.v / chTot * 100) : 0}%</em></div></div>`).join('')}</div>
+        ${window.drinkCard(tOrd, tPos)}
+        <div class="section-h">${IC('flame','#FF9500',20)}${Lb('Aaj ke top dishes', 'Top dishes')}</div>
+        <div class="card">${topL.length ? topL.map((t, i) => `<div class="dish"><span class="n">${i + 1}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t[0])}</span><b>${t[1]}</b><div class="bar"><i style="width:${Math.max(4, t[1] / topMax * 100)}%"></i></div></div>`).join('') : `<div class="muted small" style="padding:6px 0">${Lb('Aaj abhi koi sale nahi.', 'Is din koi sale nahi.')}</div>`}</div>
+        <div class="list" style="margin:0 0 12px"><button class="li chev" id="go-perf" style="width:100%;text-align:left">${IC('users','#5B6CE0')}<span class="grow t">Staff ka hisaab (order · accept · table)</span></button></div>
+       </div>
       </div>
-      ${window.drinkCard(tOrd, tPos)}
-      <div class="section-h">${IC('chart','#007AFF',20)}Pichhle 7 din</div>
-      <div class="card chart"><svg viewBox="0 0 ${W} ${H}" width="100%"><line x1="0" x2="${W}" y1="118" y2="118" stroke="var(--sep)"/>${bars}</svg>
-        <div class="row gap8 xs muted" style="justify-content:center;padding-bottom:4px"><span style="color:var(--brand)">■</span>Counter <span style="color:var(--blue)">■</span>Online</div></div>
-      <div class="list" style="margin-bottom:12px"><button class="li chev" id="go-perf" style="width:100%;text-align:left">${IC('users','#5B6CE0')}<span class="grow t">Staff ka hisaab (order · accept · table)</span></button></div>
-      <div class="card" style="padding:0;overflow:hidden"><button class="row between" id="top-t" style="width:100%;text-align:left;padding:14px;gap:10px">
-        <div class="row" style="gap:12px;min-width:0">${IC('flame','#FF9500')}<div style="min-width:0"><div class="bold">${Lb('Aaj ke top dishes', 'Top dishes')}</div><div class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${topL.length ? '#1 ' + esc(topL[0][0]) : Lb('Aaj abhi koi sale nahi.', 'Is din koi sale nahi.')}</div></div></div>
-        <svg class="cv ${Owner.topOpen ? 'open' : ''}" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
-      <div id="top-b" class="${Owner.topOpen ? '' : 'hide'}" style="padding:0 14px 8px;border-top:.5px solid var(--sep)">${topL.length ? topL.map((t, i) => `<div class="rank"><span class="n">${i + 1}</span><span class="grow">${esc(t[0])}</span><b>${t[1]}</b></div>`).join('') : '<div class="muted small" style="padding:10px 0">Aaj abhi koi sale nahi.</div>'}</div></div>
-      <div style="height:20px"></div>`;
+    </div>`;
     const sw = $('#acc-sw'); sw.onchange = async () => { const ok = await Owner.saveSettings({ accepting_orders: sw.checked }); if (!ok) sw.checked = !sw.checked; else { toast(sw.checked ? 'Online orders chalu ✓' : 'Online orders band kiye', sw.checked ? 'ok' : ''); $('#acc-sub').textContent = sw.checked ? 'Customers abhi order kar sakte hain' : 'Band hai — customers order nahi kar sakte'; } };
     const gp = $('#go-perf'); if (gp) gp.onclick = () => Staff.perfView();
     const gr = $('#go-rep'); if (gr) gr.onclick = () => dayCloseSheet(hd);
     const gt = $('#go-today'); if (gt) gt.onclick = () => { Owner.homeDay = null; const hc = $('#home-cal'); if (hc) hc.value = dayStr(); renderHome(); };
     const g = $('#go-orders'); if (g) g.onclick = () => tab('orders');
     $$('[data-tile]', box).forEach(el => el.onclick = () => { const k = el.dataset.tile; if (k === 'credit') return udhaarSheet(); if (k === 'rcv') return window.rcvSheet(rcvL, 'Udhaar wasooli ka detail'); window.tileDetail(k, tOrd, tPos); });
-    const csv = $('.chart svg'); if (csv) csv.onclick = e => { const r = csv.getBoundingClientRect(), i = Math.max(0, Math.min(6, Math.floor((e.clientX - r.left) / r.width * W / (W / 7)))); dayDetail(per[i].d, oDay, pDay, posAmt); };
+    vzBind(box); $$('[data-day]', box).forEach(el => el.onclick = () => dayDetail(el.dataset.day, oDay, pDay, posAmt));
     const tt = $('#top-t'); if (tt) tt.onclick = () => { Owner.topOpen = !Owner.topOpen; $('#top-b').classList.toggle('hide', !Owner.topOpen); tt.querySelector('.cv').classList.toggle('open', Owner.topOpen); };
   }
   function dayDetail(d, oDay, pDay, posAmt) {
@@ -2163,37 +2290,47 @@ window.SONE_CONFIG = {
 
   /* ---------- more ---------- */
   function renderMore() {
-    $('#more').innerHTML = `
-      <div class="section-h" style="padding-top:14px">${IC('shop','#FF9500',20)}Restaurant</div>
-      <div class="list">
-        <button class="li chev" data-m="settings" style="width:100%;text-align:left">${IC('gear','#8E8E93')}<span class="grow t">Delivery, minimum order, UPI</span></button>
- <button class="li chev" data-m="profile" style="width:100%;text-align:left">${IC('users','#34C759')}<span class="grow t">Meri profile (mobile number)</span></button>
-        <button class="li chev" data-m="contacts" style="width:100%;text-align:left">${IC('phone','#007AFF')}<span class="grow t">Customer ke liye call numbers</span></button>
-        <button class="li chev" data-m="livemap" style="width:100%;text-align:left">${IC('phone','#FF3B30')}<span class="grow t">Live deliveries (map)</span></button>
-  <button class="li chev" data-m="billsz" style="width:100%;text-align:left">${IC('book','#FF9500')}<span class="grow t">🧾 Bill / KOT print ka akshar</span></button>
-        <button class="li chev" data-m="health" style="width:100%;text-align:left">${IC('gear','#34C759')}<span class="grow t">🩺 App ki sehat (problem check)</span></button>
-        <button class="li chev" data-m="bbill" style="width:100%;text-align:left">${IC('book','#B3141B')}<span class="grow t">🧾 Booking bill (room / khana / party) - photo ya PDF</span></button>
-        <button class="li chev" data-m="dayclose" style="width:100%;text-align:left">${IC('book','#FF9500')}<span class="grow t">Din ka hisaab (WhatsApp / print)</span></button>
-        <button class="li chev" data-m="perf" style="width:100%;text-align:left">${IC('chart','#5B6CE0')}<span class="grow t">Staff ka hisaab (kaun kitna)</span></button>
-        <button class="li chev" data-m="staff" style="width:100%;text-align:left">${IC('users','#007AFF')}<span class="grow t">Staff (waiter) accounts</span></button>
-        <button class="li chev" data-m="seed" style="width:100%;text-align:left">${IC('down','#34C759')}<span class="grow t">Poora menu load karein (211 items)</span></button>
-        <button class="li chev" data-m="udhaar" style="width:100%;text-align:left">${IC('book','#5856D6')}<span class="grow t">Udhaar (baaki payment)</span></button>
-        <button class="li chev" data-m="export" style="width:100%;text-align:left">${IC('up','#FF9500')}<span class="grow t">Hisaab download (CSV)</span></button>
+    const it = (m, ic, col, txt, sub) => `<button class="mi" data-m="${m}">${IC(ic, col)}<span class="t">${txt}${sub ? `<span class="s">${sub}</span>` : ''}</span><span class="c">›</span></button>`;
+    const lastB = (() => { const b = ls.get('sone_last_backup', ''); return b ? 'Aakhri backup: ' + new Date(b).toLocaleString((window.SONE_LANGCODE || 'en-IN') + '-u-nu-latn') : ''; })();
+    const nm = esc(Staff.me ? Staff.me.name : '') || 'Owner';
+    $('#more').innerHTML = `<div class="set-wrap">
+      <div class="set-me"><div class="av">${nm.slice(0, 1).toUpperCase()}</div><div style="min-width:0"><div class="bold" style="font-size:17px">${nm}</div><div class="small muted">Sone Owner · Version ${window.SONE_BUILD}</div></div></div>
+      <div class="set-grp">${IC('shop','#FF9500',20)}Restaurant</div>
+      <div class="set-grid">
+        ${it('settings', 'gear', '#8E8E93', 'Delivery, minimum order, UPI')}
+        ${it('profile', 'users', '#34C759', 'Meri profile (mobile number)')}
+        ${it('contacts', 'phone', '#007AFF', 'Customer ke liye call numbers')}
+        ${it('livemap', 'phone', '#FF3B30', 'Live deliveries (map)')}
       </div>
-      <div class="section-h">${IC('down','#34C759',20)}Backup / Restore</div>
-      <div class="list">
-        <button class="li" data-m="backup" style="width:100%;text-align:left">${IC('down','#34C759')}<span class="grow"><span class="t">Poora backup download karein</span><span class="s" style="display:block">${(() => { const b = ls.get('sone_last_backup', ''); return b ? 'Aakhri backup: ' + new Date(b).toLocaleString((window.SONE_LANGCODE || 'en-IN') + '-u-nu-latn', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Abhi tak backup nahi liya'; })()}</span></span></button>
-        <button class="li" data-m="restore" style="width:100%;text-align:left">${IC('up','#FF9500')}<span class="grow t">Backup se wapas laayein (Restore)</span></button>
+      <div class="set-grp">${IC('book','#FF9500',20)}${TT_('Billing aur Report')}</div>
+      <div class="set-grid">
+        ${it('dayclose', 'book', '#FF9500', 'Din ka hisaab (WhatsApp / print)')}
+        ${it('udhaar', 'book', '#5856D6', 'Udhaar (baaki payment)')}
+        ${it('perf', 'chart', '#5B6CE0', 'Staff ka hisaab (kaun kitna)')}
+        ${it('export', 'up', '#FF9500', 'Hisaab download (CSV)')}
+        ${it('billsz', 'book', '#FF9500', '🧾 Bill / KOT print ka akshar')}
+        ${it('bbill', 'book', '#B3141B', '🧾 Booking bill (room / khana / party) - photo ya PDF')}
       </div>
-      <div class="section-h">${IC('phone','#8E8E93',20)}App</div>
-      <div class="list">
-        <div class="li">${IC('bell','#FF9F0A')}<div class="grow t">Naye order ki awaaz</div><label class="sw"><input type="checkbox" id="sw-snd" ${ls.get('sone_mute', false) ? '' : 'checked'}><i></i></label></div>
-        <button class="li" data-m="test" style="width:100%;text-align:left">${IC('sound','#007AFF')}<span class="grow t" style="color:var(--blue)">Awaaz test karein</span></button>
-        <button class="li chev" data-m="pwd" style="width:100%;text-align:left">${IC('gear','#FF9500')}<span class="grow t">🔑 Password badlein</span></button>
-        <button class="li" data-m="update" style="width:100%;text-align:left">${IC('down','#007AFF')}<span class="grow t">🔄 App update karein<small class="muted" style="display:block;font-weight:400;font-size:12px">Version ${window.SONE_BUILD}</small></span></button>
-        <button class="li" data-m="logout" style="width:100%;text-align:left">${IC('out','#FF3B30')}<span class="grow t" style="color:var(--red)">Logout</span></button>
+      <div class="set-grp">${IC('users','#007AFF',20)}${TT_('Staff aur Menu')}</div>
+      <div class="set-grid">
+        ${it('staff', 'users', '#007AFF', 'Staff (waiter) accounts')}
+        ${it('seed', 'down', '#34C759', 'Poora menu load karein (211 items)')}
       </div>
-      <p class="xs muted" style="text-align:center;padding:24px">Sone Owner · ${esc(Staff.me ? Staff.me.name : '')}</p>`;
+      <div class="set-grp">${IC('down','#34C759',20)}Backup / Restore</div>
+      <div class="set-grid">
+        ${it('backup', 'down', '#34C759', 'Poora backup download karein', lastB)}
+        ${it('restore', 'up', '#FF9500', 'Backup se wapas laayein (Restore)')}
+      </div>
+      <div class="set-grp">${IC('phone','#8E8E93',20)}App</div>
+      <div class="set-grid">
+        <div class="mi row">${IC('bell','#FF9F0A')}<span class="t">Naye order ki awaaz</span><label class="sw"><input type="checkbox" id="sw-snd" ${ls.get('sone_mute', false) ? '' : 'checked'}><i></i></label></div>
+        ${it('test', 'sound', '#007AFF', 'Awaaz test karein')}
+        ${it('health', 'gear', '#34C759', '🩺 App ki sehat (problem check)')}
+        ${it('pwd', 'gear', '#FF9500', '🔑 Password badlein')}
+        ${it('update', 'down', '#007AFF', '🔄 App update karein', 'Version ' + window.SONE_BUILD)}
+        ${it('logout', 'out', '#FF3B30', 'Logout')}
+      </div>
+      <p class="xs muted" style="text-align:center;padding:24px">Sone Owner · ${nm}</p></div>`;
   }
   $('#more').onclick = e => {
     const b = e.target.closest('[data-m]'); if (!b) return; const m = b.dataset.m;
@@ -2265,13 +2402,55 @@ window.SONE_CONFIG = {
   }
 
   /* ---------- din ka hisaab (close day) ---------- */
+  /* ---------- Din ka hisaab: sundar photo (PNG) banao -> WhatsApp / download / print ---------- */
+  window.SONE_X = (window.SONE_X || []).concat([
+    ["WhatsApp par photo bhejein", "व्हाट्सऐप पर फ़ोटो भेजें", "Send photo on WhatsApp", "Send photo on WhatsApp", "Send photo on WhatsApp", "Send photo on WhatsApp", "Send photo on WhatsApp", "Send photo on WhatsApp"],
+    ["Photo download karein", "फ़ोटो डाउनलोड करें", "Download photo", "Download photo", "Download photo", "Download photo", "Download photo", "Download photo"],
+    ["Photo ban rahi hai…", "फ़ोटो बन रही है…", "Making the photo…", "Making the photo…", "Making the photo…", "Making the photo…", "Making the photo…", "Making the photo…"]
+  ]);
+  async function htmlToPng(html, w, scale) {
+    const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-99999px;top:0;width:' + w + 'px'; host.innerHTML = html; document.body.appendChild(host);
+    const el = host.firstElementChild, h = Math.ceil(el.getBoundingClientRect().height), xml = new XMLSerializer().serializeToString(el); document.body.removeChild(host);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject x="0" y="0" width="${w}" height="${h}">${xml}</foreignObject></svg>`;
+    const img = new Image(); await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('image')); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
+    const sc = scale || 2, cv = document.createElement('canvas'); cv.width = w * sc; cv.height = h * sc; const cx = cv.getContext('2d'); cx.fillStyle = '#F2F4FA'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(img, 0, 0, cv.width, cv.height);
+    const url = cv.toDataURL('image/png'), blob = await new Promise(r => cv.toBlob(r, 'image/png')); if (!blob) throw new Error('png');
+    return { url, blob };
+  }
+  function reportCard(d) {
+    const T = x => TT_(x), m = money, FF = "-apple-system,'Segoe UI',Roboto,'Noto Sans Devanagari','Noto Sans',Arial,sans-serif";
+    const kpi = (lbl, val, col) => `<div style="flex:1;min-width:0;background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 1px 0 rgba(0,0,0,.05)"><div style="font-size:13px;color:#6b7280">${lbl}</div><div style="font-size:24px;font-weight:700;color:${col || '#1c1c1e'};margin-top:4px">${val}</div></div>`;
+    const sec = t => `<div style="font-size:14px;font-weight:700;color:#4655C7;letter-spacing:.3px;margin:22px 0 10px;text-transform:uppercase">${t}</div>`;
+    const mixTot = Math.max(1, d.cash + d.upi + d.udh), seg = (v, c) => v > 0 ? `<div style="width:${v / mixTot * 100}%;background:${c};height:16px"></div>` : '';
+    const leg = (c, n, v) => `<div style="display:flex;align-items:center;gap:8px;font-size:14px"><span style="width:12px;height:12px;border-radius:4px;background:${c};display:inline-block"></span><span style="color:#374151">${n}</span><b style="margin-left:auto">${m(v)}</b><span style="color:#6b7280;width:42px;text-align:right">${Math.round(v / mixTot * 100)}%</span></div>`;
+    const topMax = d.topL.length ? d.topL[0][1] : 1;
+    return `<div style="width:720px;box-sizing:border-box;background:#F2F4FA;font-family:${FF};color:#1c1c1e">
+      <div style="background:linear-gradient(135deg,#3B49B8,#6B7BEA);color:#fff;padding:26px 28px 56px;display:flex;align-items:center;gap:16px">
+        ${d.logo ? `<img src="${d.logo}" style="width:58px;height:58px;border-radius:50%;background:#fff;object-fit:contain;padding:4px"/>` : ''}
+        <div><div style="font-size:24px;font-weight:800;letter-spacing:.5px">${esc(d.rest)}</div><div style="font-size:15px;opacity:.92;margin-top:3px">${T('Din ka hisaab')} · ${esc(d.nice)}</div></div></div>
+      <div style="padding:0 28px 26px;margin-top:-34px">
+        <div style="background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 6px 24px rgba(70,85,199,.18)">
+          <div style="font-size:14px;color:#6b7280">${T('Total sale')}</div><div style="font-size:44px;font-weight:800;color:#3B49B8;letter-spacing:-1px">${m(d.total)}</div>
+          <div style="display:flex;gap:24px;margin-top:6px;font-size:14px;color:#374151"><span>🧾 ${T('Counter bills')} <b>${d.nPos}</b> · ${m(d.pAmt)}</span><span>🛵 ${T('Online orders')} <b>${d.nOrd}</b> · ${m(d.oAmt)}</span></div></div>
+        <div style="display:flex;gap:12px;margin-top:14px">${kpi('💵 ' + T('Cash mila'), m(d.cash), '#0f8a5f')}${kpi('📱 ' + T('Online/UPI mila'), m(d.upi), '#5b49c9')}</div>
+        <div style="display:flex;gap:12px;margin-top:12px">${kpi('📒 ' + T('Udhaar diya'), m(d.udh), d.udh ? '#c27b00' : '')}${kpi('🏷️ ' + T('Discount diya'), m(d.disc), d.disc ? '#e0661f' : '')}</div>
+        ${sec(T('Payment kaise mila'))}
+        <div style="background:#fff;border-radius:16px;padding:16px 18px"><div style="display:flex;border-radius:8px;overflow:hidden;gap:2px;background:#eef0f6">${seg(d.cash, '#1baf7a')}${seg(d.upi, '#6250d6')}${seg(d.udh, '#eda100')}</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">${leg('#1baf7a', T('Cash'), d.cash)}${leg('#6250d6', T('Online/UPI'), d.upi)}${leg('#eda100', T('Udhaar diya'), d.udh)}</div></div>
+        ${d.rcvC + d.rcvO > 0 ? `${sec(T('Udhaar wasooli ka detail'))}<div style="background:#fff;border-radius:16px;padding:14px 18px;font-size:14px"><div style="display:flex"><span>${T('Udhaar wasool - Cash')}</span><b style="margin-left:auto">${m(d.rcvC)}</b></div><div style="display:flex;margin-top:6px"><span>${T('Udhaar wasool - Online')}</span><b style="margin-left:auto">${m(d.rcvO)}</b></div></div>` : ''}
+        ${d.topL.length ? `${sec(T('Top dishes'))}<div style="background:#fff;border-radius:16px;padding:8px 18px">${d.topL.map((t, i) => `<div style="padding:9px 0;${i ? 'border-top:1px solid #eef0f6' : ''}"><div style="display:flex;font-size:15px"><span style="color:#9ca3af;width:24px">${i + 1}</span><span>${esc(t[0])}</span><b style="margin-left:auto">× ${t[1]}</b></div><div style="height:6px;border-radius:3px;background:#eef0f6;margin:6px 0 0 24px"><div style="height:6px;border-radius:3px;background:#4655C7;width:${Math.max(5, t[1] / topMax * 100)}%"></div></div></div>`).join('')}</div>` : ''}
+        ${d.discL.length ? `${sec(T('Discount ka detail'))}<div style="background:#fff;border-radius:16px;padding:10px 18px;font-size:14px">${d.discL.slice(0, 8).map((x, i) => `<div style="display:flex;padding:6px 0;${i ? 'border-top:1px solid #eef0f6' : ''}"><span>${esc(x.n)}</span><b style="margin-left:auto;color:#e0661f">− ${m(x.a)}</b></div>`).join('')}${d.discL.length > 8 ? `<div style="color:#6b7280;padding-top:6px">+ ${d.discL.length - 8} …</div>` : ''}</div>` : ''}
+        ${d.staff.length ? `${sec(T('Staff ka hisaab'))}<div style="background:#fff;border-radius:16px;padding:10px 18px;font-size:14px">${d.staff.map((r, i) => `<div style="display:flex;padding:6px 0;${i ? 'border-top:1px solid #eef0f6' : ''}"><span>${esc(r.name)}</span><b style="margin-left:auto">${m(r.tkA + r.acA)}</b></div>`).join('')}</div>` : ''}
+        <div style="text-align:center;font-size:12px;color:#9ca3af;margin-top:22px">${esc(d.rest)} · ${new Date().toLocaleString((window.SONE_LANGCODE || 'en-IN') + '-u-nu-latn')}</div>
+      </div></div>`;
+  }
   async function dayCloseSheet(d0) {
     const C = window.SONE_CONFIG, T = x => TT_(x);
-    let day = typeof d0 === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d0) ? d0 : dayStr(), text = '';
+    let day = typeof d0 === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d0) ? d0 : dayStr(), text = '', png = null;
     const sh = sheet(`<div class="sh-head"><h3>${T('Din ka hisaab')}</h3><button class="iconbtn" data-close>✕</button></div>
       <div class="pad" style="padding-top:0"><input class="inp" id="dc-day" type="date" value="${day}" max="${dayStr()}"></div>
       <div class="sh-body" id="dc-body"><div class="spin"></div></div>
-      <div class="sh-foot"><div class="row gap8"><button class="btn green grow" id="dc-wa">💬 ${T('WhatsApp par bhejein')}</button><button class="btn sec grow" id="dc-cp">${T('Copy karein')}</button><button class="btn sec grow" id="dc-pr">🖨 ${T('Print karein')}</button></div></div>`, { full: true });
+      <div class="sh-foot"><div class="row gap8"><button class="btn green grow" id="dc-wa">💬 ${T('WhatsApp par photo bhejein')}</button><button class="btn sec grow" id="dc-cp">⬇ ${T('Photo download karein')}</button><button class="btn sec grow" id="dc-pr">🖨 ${T('Print karein')}</button></div></div>`, { full: true });
     const body = $('#dc-body', sh.el);
     async function load() {
       body.innerHTML = '<div class="spin"></div>';
@@ -2308,7 +2487,7 @@ window.SONE_CONFIG = {
         (staff.length ? `\n--------------\n*${T('Staff ka hisaab')}*\n` + staff.map(r => `${r.name}: ${m(r.tkA + r.acA)} (${r.tk} + ${r.ac})`).join('\n') : '');
       if (discL.length) text += `\n--------------\n*${T('Discount ka detail')}*\n` + discL.map(d => `${d.n}: - ${m(d.a)}`).join('\n');
       if (rcv.length) text += `\n--------------\n*${T('Udhaar wasooli ka detail')}*\n` + rcv.map(q => `${q.customer_name || '-'} · #${q.bill_no}: ${m(q.amount)} (${q.mode === 'online' ? 'Online' : 'Cash'})`).join('\n');
-      body.innerHTML = `<div class="small muted" style="padding:0 20px 8px">${esc(nice)}</div>
+      const legacy = `<div class="small muted" style="padding:0 20px 8px">${esc(nice)}</div>
         <div class="tile" style="margin:0 16px 12px;background:var(--brand);color:#fff"><div class="l" style="color:rgba(255,255,255,.85)">${T('Total sale')}</div><div class="v">${m(oAmt + pAmt)}</div></div>
         <div class="list">${L.slice(1).map(r => `<div class="li"><span class="grow t">${T(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
         ${discL.length ? `<div class="section-h">${T('Discount ka detail')}</div><div class="list">${discL.map(d => `<div class="li"><span class="grow t">${esc(d.n)}</span><b style="color:var(--orange,#FF9500)">− ${m(d.a)}</b></div>`).join('')}</div>` : ''}
@@ -2316,11 +2495,25 @@ window.SONE_CONFIG = {
         ${window.drinkCard(ord, pos)}
         ${topL.length ? `<div class="section-h">${T('Top dishes')}</div><div class="card">${topL.map((t, i) => `<div class="rank"><span class="n">${i + 1}</span><span class="grow">${esc(t[0])}</span><b>${t[1]}</b></div>`).join('')}</div>` : ''}
         ${staff.length ? `<div class="section-h">${T('Staff ka hisaab')}</div><div class="list">${staff.map(r => `<div class="li"><span class="grow t">${esc(r.name)}</span><b>${m(r.tkA + r.acA)}</b></div>`).join('')}</div>` : ''}<div style="height:12px"></div>`;
+      png = null; body.innerHTML = '<div class="spin"></div>';
+      try {
+        const logoEl = document.querySelector('#v-home .navbar img');
+        png = await htmlToPng(reportCard({ rest: C.RESTAURANT, nice, logo: logoEl ? logoEl.src : '', total: oAmt + pAmt, oAmt, pAmt, nOrd: ord.length, nPos: pos.length, cash, upi, udh, disc: discT, discL, rcvC, rcvO, topL, staff }), 720, 2);
+        body.innerHTML = `<div style="padding:0 16px 12px"><img src="${png.url}" alt="" style="width:100%;display:block;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.15)"></div>`;
+      } catch (e) { console.warn('report photo', e); body.innerHTML = legacy; }
     }
     $('#dc-day', sh.el).onchange = e => { day = e.target.value || dayStr(); load(); };
-    $('#dc-wa', sh.el).onclick = async () => { if (!text) return; if (navigator.share) { try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === 'AbortError') return; } } window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); };
-    $('#dc-cp', sh.el).onclick = async () => { try { await navigator.clipboard.writeText(text); toast(T('Copy ho gaya ✓'), 'ok'); } catch (e) { toast('Copy nahi hua', 'err'); } };
-    $('#dc-pr', sh.el).onclick = () => Staff.printHTML(`<div style="width:72mm;margin:0 auto;font:13px/1.45 Arial,sans-serif;color:#000;padding:6px;white-space:pre-wrap">${esc(text.replace(/\*/g, ''))}</div>`);
+    const fname = () => 'sone-hisaab-' + day + '.png';
+    const dl = () => { const a = document.createElement('a'); a.href = png.url; a.download = fname(); document.body.appendChild(a); a.click(); a.remove(); };
+    $('#dc-wa', sh.el).onclick = async () => {
+      if (!png) { if (!text) return; return window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); }
+      const file = new File([png.blob], fname(), { type: 'image/png' }), cap = C.RESTAURANT + ' · ' + T('Din ka hisaab') + ' · ' + day;
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], text: cap }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+      dl(); try { if (window.ClipboardItem && navigator.clipboard) await navigator.clipboard.write([new ClipboardItem({ 'image/png': png.blob })]); } catch (e) {}
+      toast(T('Photo download ho gayi — WhatsApp me chat khol kar paste/attach karein'), 'ok'); window.open('https://wa.me/', '_blank');
+    };
+    $('#dc-cp', sh.el).onclick = () => { if (!png) return toast('Photo nahi bani', 'err'); dl(); toast(T('Photo download ho gayi ✓'), 'ok'); };
+    $('#dc-pr', sh.el).onclick = () => { if (!png) return Staff.printHTML(`<div style="width:72mm;margin:0 auto;font:13px/1.45 Arial,sans-serif;color:#000;padding:6px;white-space:pre-wrap">${esc(text.replace(/\*/g, ''))}</div>`); Staff.printHTML(`<div style="text-align:center"><img src="${png.url}" style="width:100%;max-width:190mm"></div>`); };
     load();
   }
 
@@ -2435,6 +2628,36 @@ window.SONE_CONFIG = {
     ["Is din ka poora dashboard", "इस दिन का पूरा डैशबोर्ड", "Full dashboard for this day", "Full dashboard for this day", "Full dashboard for this day", "Full dashboard for this day", "Full dashboard for this day", "Full dashboard for this day"],
     ["Poori report", "पूरी रिपोर्ट", "Full report", "Full report", "Full report", "Full report", "Full report", "Full report"],
     ["Aaj par wapas", "आज पर वापस", "Back to today", "Back to today", "Back to today", "Back to today", "Back to today", "Back to today"]
+  ]);
+  window.SONE_X = (window.SONE_X || []).concat([
+    ["Kul mila", "कुल मिला", "Total received", "Total received", "Total received", "Total received", "Total received", "Total received"],
+    ["Counter", "काउंटर", "Counter", "Counter", "Counter", "Counter", "Counter", "Counter"],
+    ["Online", "ऑनलाइन", "Online", "Online", "Online", "Online", "Online", "Online"],
+    ["Kul", "कुल", "Total", "Total", "Total", "Total", "Total", "Total"],
+    ["Avg", "औसत", "Avg", "Avg", "Avg", "Avg", "Avg", "Avg"],
+    ["bill/order", "बिल/ऑर्डर", "bills/orders", "bills/orders", "bills/orders", "bills/orders", "bills/orders", "bills/orders"],
+    ["pichhle din se", "पिछले दिन से", "vs previous day", "vs previous day", "vs previous day", "vs previous day", "vs previous day", "vs previous day"],
+    ["Payment kaise mila", "पेमेंट कैसे मिला", "Payment mix", "Payment mix", "Payment mix", "Payment mix", "Payment mix", "Payment mix"],
+    ["Ghante ke hisaab se sale", "घंटे के हिसाब से बिक्री", "Sales by hour", "Sales by hour", "Sales by hour", "Sales by hour", "Sales by hour", "Sales by hour"],
+    ["Bar dabayein = us din ka detail", "बार दबाएँ = उस दिन का विवरण", "Tap a bar for that day", "Tap a bar for that day", "Tap a bar for that day", "Tap a bar for that day", "Tap a bar for that day", "Tap a bar for that day"],
+    ["Udhaar diya", "उधार दिया", "Udhaar given", "Udhaar given", "Udhaar given", "Udhaar given", "Udhaar given", "Udhaar given"],
+    ["Billing aur Report", "बिलिंग और रिपोर्ट", "Billing & Reports", "Billing & Reports", "Billing & Reports", "Billing & Reports", "Billing & Reports", "Billing & Reports"],
+    ["Staff aur Menu", "स्टाफ और मेन्यू", "Staff & Menu", "Staff & Menu", "Staff & Menu", "Staff & Menu", "Staff & Menu", "Staff & Menu"]
+  ]);
+  window.SONE_X = (window.SONE_X || []).concat([
+    ["Aaj ka target", "आज का लक्ष्य", "Today's target", "Today's target", "Today's target", "Today's target", "Today's target", "Today's target"],
+    ["Bikri kahan se aayi", "बिक्री कहाँ से आई", "Sales by channel", "Sales by channel", "Sales by channel", "Sales by channel", "Sales by channel", "Sales by channel"],
+    ["Target = pichhle 6 din ka average", "लक्ष्य = पिछले 6 दिन का औसत", "Target = average of the previous 6 days", "Target = average of the previous 6 days", "Target = average of the previous 6 days", "Target = average of the previous 6 days", "Target = average of the previous 6 days", "Target = average of the previous 6 days"],
+    ["Target pura!", "लक्ष्य पूरा!", "Target reached!", "Target reached!", "Target reached!", "Target reached!", "Target reached!", "Target reached!"],
+    ["aur chahiye", "और चाहिए", "to go", "to go", "to go", "to go", "to go", "to go"],
+    ["Target ke liye abhi data kam hai", "लक्ष्य के लिए अभी डेटा कम है", "Not enough data for a target yet", "Not enough data for a target yet", "Not enough data for a target yet", "Not enough data for a target yet", "Not enough data for a target yet", "Not enough data for a target yet"],
+    ["Dine-in", "डाइन-इन", "Dine-in", "Dine-in", "Dine-in", "Dine-in", "Dine-in", "Dine-in"],
+    ["Pickup", "पिकअप", "Pickup", "Pickup", "Pickup", "Pickup", "Pickup", "Pickup"],
+    ["Delivery", "डिलीवरी", "Delivery", "Delivery", "Delivery", "Delivery", "Delivery", "Delivery"]
+  ]);
+  window.SONE_X = (window.SONE_X || []).concat([
+    ["Photo download ho gayi — WhatsApp me chat khol kar paste/attach karein", "फ़ोटो डाउनलोड हो गई — व्हाट्सऐप चैट में पेस्ट/अटैच करें", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat"],
+    ["Photo download ho gayi ✓", "फ़ोटो डाउनलोड हो गई ✓", "Photo downloaded ✓", "Photo downloaded ✓", "Photo downloaded ✓", "Photo downloaded ✓", "Photo downloaded ✓", "Photo downloaded ✓"]
   ]);
   const rcvMissing = e => !!e && (e.code === '42P01' || e.code === 'PGRST205' || /udhaar_payments/i.test(e.message || ''));
   window.getUdhaarPayments = async function (from, to, limit) {
