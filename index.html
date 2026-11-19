@@ -957,7 +957,8 @@ window.SONE_CONFIG = {
       <div class="mt8 small"><b>${esc(o.customer_name)}</b>${o.phone && o.phone !== '-' ? ` · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>` : ''}</div>
       <div class="small muted mt8">${where}</div>
       <div class="items">${items}</div>
-      ${o.note ? `<div class="small mb8">📝 <i>${esc(o.note)}</i></div>` : ''}
+      ${window.cleanNote(o.note) ? `<div class="small mb8">📝 <i>${esc(window.cleanNote(o.note))}</i></div>` : ''}
+      ${(() => { const m = String(o.note || '').match(/\[उधार ₹([\d.]+)\]/), n = String(o.note || '').match(/\[नाम: ([^\]]*)\]/); return m ? `<div class="mb8"><span class="pill orange">📒 उधार ₹${esc(m[1])}${n ? ' · ' + esc(n[1]) : ''}</span></div>` : ''; })()}
       <div class="row between small"><div>${payLine}</div><b style="font-size:18px">${money(o.total)}</b></div>
       ${o.delivery_fee > 0 ? `<div class="xs muted right">(delivery ${money(o.delivery_fee)} shaamil)</div>` : ''}
       ${o.status === 'cancelled' ? `<div class="small mt8" style="color:var(--red)">Cancelled: ${esc(o.cancel_reason || '')}</div>` : `<div class="mt8"><span class="pill ${o.status === 'completed' ? 'green' : 'orange'}">${STATUS_LABEL[o.status]}</span></div>`}
@@ -1168,7 +1169,7 @@ window.SONE_CONFIG = {
       <table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:13.5px"><tr style="border-top:1px dashed #000;border-bottom:1px dashed #000"><th align="left" style="padding:3px 0">${kTT('Item')}</th><th align="right" style="padding:3px 0">${kTT('Qty')}</th></tr>
         ${its.map(i => `<tr style="border-bottom:1px dotted #999"><td style="padding:5px 4px 5px 0;font-weight:700">${vm(i)}${esc(i.name)}</td><td align="right" style="font-size:18px;font-weight:800;white-space:nowrap">× ${i.qty}</td></tr>`).join('')}</table>
       <div style="border-top:1px dashed #000;margin-top:4px;padding-top:4px">${row(kTT('Total Items') + ': ' + its.length, kTT('Total Qty') + ': ' + qty, 'font-weight:700')}</div>
-      ${o.note ? `<div style="margin-top:6px;padding:5px 6px;border:1px solid #000;font-weight:700">📝 ${esc(o.note)}</div>` : ''}
+      ${window.cleanNote(o.note) ? `<div style="margin-top:6px;padding:5px 6px;border:1px solid #000;font-weight:700">📝 ${esc(window.cleanNote(o.note))}</div>` : ''}
       <div style="text-align:center;margin-top:10px;border-top:1px dashed #000;padding-top:6px;font-size:11px">${kTT('— Kitchen Copy —')}</div></div>`;
   };
   S.printKOT = o => printHTML(S.kotHTML(o));
@@ -1563,7 +1564,7 @@ window.SONE_CONFIG = {
   /* ---------- udhaar add: khana kha ke gaye, paisa baad mein ---------- */
 
   /* ---------- galti se jodha hua udhaar hatana (bill soft-delete + order ka [उधार] marker hatana) ---------- */
-  const UD_MARK = /\s*\[\u0909\u0927\u093e\u0930 \u20b9[\d.]+\]/g;
+  const UD_MARK = /\s*\[(?:\u0909\u0927\u093e\u0930 \u20b9[\d.]+|\u0928\u093e\u092e: [^\]]*)\]/g;
   window.undoUdhaarBill = async function (r) {
     const { error } = await sb.from('pos_sales').update({ deleted_at: new Date().toISOString() }).eq('id', r.id); if (error) throw error;
     const m = String(((r.items || [])[0] || {}).name || '').match(/^\u0911\u0930\u094d\u0921\u0930 #(\S+)/);
@@ -1588,7 +1589,7 @@ window.SONE_CONFIG = {
       <div class="sh-body"><div class="card"><label class="field"><span>ग्राहक का नाम${PEN()}</span><input class="inp" id="ud-name" value="${esc(nm0)}" autocomplete="off"></label>
       <label class="field"><span>रकम (₹)${PEN()}</span><input class="inp" id="ud-amt" type="number" inputmode="decimal" value="${dueAmt || ''}"></label>
       <label class="field" style="margin:0"><span>क्या खाया / नोट${PEN()}</span><input class="inp" id="ud-note" value="${esc(note0)}" autocomplete="off"></label>
-      ${o ? '<div class="xs muted mt12">इस ऑर्डर की बिक्री पहले से गिनी जा चुकी है, इसलिए यह सिर्फ उधार की सूची में जुड़ेगा।</div>' : ''}</div></div>
+      ${o ? '<div class="xs muted mt12">यह उधार इसी ऑर्डर में दर्ज होगा (POS बिल नहीं बनेगा)। उधार की सूची में "ऑर्डर का उधार" में दिखेगा।</div>' : ''}</div></div>
       <div class="sh-foot"><button class="btn block" id="ud-save">सहेजें</button></div>`);
     setTimeout(() => { const n = $('#ud-name', sh.el); if (n && !n.value) n.focus(); }, 250);
     $('#ud-save', sh.el).onclick = async e => {
@@ -1598,8 +1599,8 @@ window.SONE_CONFIG = {
       const btn = e.currentTarget; btn.disabled = true;
       try {
         const label = o ? 'ऑर्डर #' + o.order_no + (note ? ' · ' + note : '') : (note || 'उधार');
-        await saveBill({ items: [{ name: label, price: o ? 0 : amt, qty: 1, total: o ? 0 : amt }], subtotal: o ? 0 : amt, discount: 0, cash: 0, online: 0, udhaar: amt, customer_name: name, table_no: o ? (o.table_no || null) : null });
-        if (o) { await window.Staff.update(o, { note: ((o.note ? o.note + ' ' : '') + '[उधार ₹' + amt + ']').trim() }); }
+        if (o) await window.Staff.update(o, { note: ((o.note ? String(o.note).replace(UD_MARK, '').trim() + ' ' : '') + '[उधार ₹' + amt + ']' + (name ? ' [नाम: ' + name.replace(/[\[\]]/g, '') + ']' : '')).trim() });   /* order ka udhaar order me hi rahega, POS bill nahi banta */
+        else await saveBill({ items: [{ name: label, price: amt, qty: 1, total: amt }], subtotal: amt, discount: 0, cash: 0, online: 0, udhaar: amt, customer_name: name, table_no: null });
         sh.close(); haptic(12); toast('उधार सहेजा गया ✓', 'ok'); opts.done && opts.done();
       } catch (err) { btn.disabled = false; toast('उधार सहेजा नहीं जा सका: ' + (err.message || err), 'err'); }
     };
@@ -2167,9 +2168,9 @@ window.SONE_CONFIG = {
     const days = []; for (let i = 6; i >= 0; i--) days.push(dayStr(new Date(new Date(hd + 'T12:00:00').getTime() - i * 86400e3)));
     const [s, u, rc] = await Promise.all([
       sb.from('pos_sales').select('*').gte('bill_date', days[0]).lte('bill_date', hd).is('deleted_at', null),
-      sb.from('pos_sales').select('udhaar').gt('udhaar', 0).is('deleted_at', null),
+      sb.from('pos_sales').select('udhaar,items').gt('udhaar', 0).is('deleted_at', null),
       window.getUdhaarPayments(hd, hd)]);
-    try { await Staff.loadMenu(); } catch (e) {} SALES = s.data || []; const udhaar = (u.data || []).reduce((a, r) => a + Number(r.udhaar), 0);
+    try { await Staff.loadMenu(); } catch (e) {} SALES = s.data || []; let udhaar = (u.data || []).reduce((a, r) => a + Number(r.udhaar), 0); try { udhaar += (await window.orderDues(u.data || [])).reduce((a, d) => a + d.amt, 0); } catch (e) {}
     /* orders: chune din + pichhle 6 din (chart ke liye). Purane din 10 min cache */
     let prevOrd = [], hdOrd = isToday ? Staff.orders : [];
     try {
@@ -2318,6 +2319,7 @@ window.SONE_CONFIG = {
       </div>
       <div class="set-grp">${IC('down','#34C759',20)}Backup / Restore</div>
       <div class="set-grid">
+        ${it('autobk', 'down', '#007AFF', 'Auto backup (computer ka D:/E: folder)', ls.get('sone_auto_bk_name', '') ? '📁 ' + esc(ls.get('sone_auto_bk_name', '')) : '')}
         ${it('backup', 'down', '#34C759', 'Poora backup download karein', lastB)}
         ${it('restore', 'up', '#FF9500', 'Backup se wapas laayein (Restore)')}
       </div>
@@ -2335,6 +2337,7 @@ window.SONE_CONFIG = {
   $('#more').onclick = e => {
     const b = e.target.closest('[data-m]'); if (!b) return; const m = b.dataset.m;
     if (m === 'billsz') window.billSizeSheet(); if (m === 'health') Staff.healthView(); if (m === 'bbill') window.openBookingBill(); if (m === 'settings') settingsSheet(); if (m === 'staff') staffSheet(); if (m === 'perf') Staff.perfView(); if (m === 'pwd') Staff.passwordView(); if (m === 'update') soneUpdate(); if (m === 'livemap') Staff.riderMap(null); if (m === 'dayclose') dayCloseSheet(); if (m === 'backup') backupNow(b); if (m === 'restore') restoreSheet(); if (m === 'profile') Staff.profileView(); if (m === 'contacts') contactsSheet(); if (m === 'udhaar') udhaarSheet(); if (m === 'seed') Owner.importMenu(); if (m === 'export') exportSheet();
+    if (m === 'autobk') autoBackupSheet();
     if (m === 'test') { chime(2); speak('Naya order aaya hai'); } if (m === 'logout') Staff.logout();
   };
   document.addEventListener('change', e => { if (e.target.id === 'sw-snd') ls.set('sone_mute', !e.target.checked); });
@@ -2518,16 +2521,71 @@ window.SONE_CONFIG = {
   }
 
   /* ---------- poora backup ---------- */
+  async function buildBackup() {
+    const tables = ['menu_items', 'orders', 'pos_sales', 'customers', 'settings'], out = { app: 'sone-restaurant', exported_at: new Date().toISOString(), tables: {} };
+    for (const t of tables) {
+      let all = [], from = 0;
+      for (;;) { const { data, error } = await sb.from(t).select('*').range(from, from + 999); if (error) throw new Error(t + ': ' + error.message); all = all.concat(data || []); if (!data || data.length < 1000) break; from += 1000; }
+      out.tables[t] = all;
+    }
+    try { const { data } = await sb.from('staff').select('id,name,role,active,phone,created_at'); out.tables.staff = data || []; } catch (e) {}
+    try { const { data } = await sb.from('udhaar_payments').select('*'); if (data) out.tables.udhaar_payments = data; } catch (e) {}
+    return out;
+  }
+  /* ============ AUTO BACKUP: computer ke D:/E: folder me roz apne aap ============ */
+  window.SONE_X = (window.SONE_X || []).concat([
+    ["Auto backup (computer ka D:/E: folder)", "ऑटो बैकअप (कंप्यूटर का D:/E: फ़ोल्डर)", "Auto backup (computer's D:/E: folder)", "Auto backup (computer's D:/E: folder)", "Auto backup (computer's D:/E: folder)", "Auto backup (computer's D:/E: folder)", "Auto backup (computer's D:/E: folder)", "Auto backup (computer's D:/E: folder)"]
+  ]);
+  const idbOpen = () => new Promise((res, rej) => { const r = indexedDB.open('sone_fs', 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const idbGet = async k => { try { const d = await idbOpen(); return await new Promise(res => { const q = d.transaction('h').objectStore('h').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; } };
+  const idbSet = async (k, v) => { const d = await idbOpen(); return new Promise((res, rej) => { const tx = d.transaction('h', 'readwrite'); tx.objectStore('h').put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); };
+  const fsOK = () => typeof window.showDirectoryPicker === 'function';
+  async function bkPerm(h, ask) { if (!h) return false; try { if ((await h.queryPermission({ mode: 'readwrite' })) === 'granted') return true; if (ask && (await h.requestPermission({ mode: 'readwrite' })) === 'granted') return true; } catch (e) {} return false; }
+  async function autoBackupRun(ask) {
+    const h = await idbGet('dir'); if (!h) return { ok: false, why: 'folder' };
+    if (!(await bkPerm(h, ask))) return { ok: false, why: 'perm' };
+    const out = await buildBackup(), name = 'sone-backup-' + dayStr() + '.json';
+    const fh = await h.getFileHandle(name, { create: true }), w = await fh.createWritable(); await w.write(JSON.stringify(out)); await w.close();
+    /* sirf pichhle 45 din ki files rakho */
+    try { const names = []; for await (const [n] of h.entries()) if (/^sone-backup-\d{4}-\d{2}-\d{2}\.json$/.test(n)) names.push(n); names.sort(); while (names.length > 45) await h.removeEntry(names.shift()); } catch (e) {}
+    ls.set('sone_auto_bk', Date.now()); ls.set('sone_auto_bk_name', h.name);
+    return { ok: true, name, n: Object.values(out.tables).reduce((a, t) => a + (t || []).length, 0) };
+  }
+  function bkPill(show) {
+    let el = document.getElementById('bk-pill');
+    if (!show) { if (el) el.remove(); return; }
+    if (el) return; el = document.createElement('button'); el.id = 'bk-pill';
+    el.style.cssText = 'position:fixed;right:14px;bottom:78px;z-index:250;padding:9px 14px;border:0;border-radius:22px;font:600 13px system-ui,sans-serif;color:#fff;background:#007AFF;box-shadow:0 4px 14px rgba(0,0,0,.28)';
+    el.textContent = '📁 Backup ke liye ek baar allow karein'; document.body.appendChild(el);
+    el.onclick = async () => { try { const r = await autoBackupRun(true); if (r.ok) { bkPill(false); toast('Backup ho gaya ✓ ' + r.name, 'ok'); } } catch (e) { toast('Backup nahi hua: ' + (e.message || e), 'err'); } };
+  }
+  async function autoBackupTick() {
+    if (!fsOK() || !navigator.onLine) return; const h = await idbGet('dir'); if (!h) return;
+    const last = Number(ls.get('sone_auto_bk', 0)) || 0, today = new Date(last).toDateString() === new Date().toDateString();
+    if (today && Date.now() - last < 6 * 3600e3) return;   /* roz kam se kam ek baar; din bhar me har 6 ghante */
+    try { const r = await autoBackupRun(false); if (!r.ok && r.why === 'perm') bkPill(true); else if (r.ok) bkPill(false); } catch (e) { console.warn('auto backup', e); }
+  }
+  setInterval(autoBackupTick, 20 * 60e3); setTimeout(autoBackupTick, 25000);
+  async function autoBackupSheet() {
+    const T = x => TT_(x); const h = await idbGet('dir'), last = Number(ls.get('sone_auto_bk', 0)) || 0;
+    const [cb, co] = await Promise.all([sb.from('pos_sales').select('id', { count: 'exact', head: true }), sb.from('orders').select('id', { count: 'exact', head: true })]);
+    const sh = sheet(`<div class="sh-head"><h3>💾 Auto backup</h3><button class="iconbtn" data-close>✕</button></div><div class="sh-body">
+      <div class="card"><div class="small muted">Supabase (online) me abhi</div><div style="font-size:20px;font-weight:700;margin-top:4px">${cb.count ?? '–'} counter bills · ${co.count ?? '–'} online orders</div>
+        <div class="small muted" style="margin-top:6px">Har bill ka size bahut chhota hota hai, isliye 500 MB limit saalon tak chalti hai. Phir bhi, computer me roz ki copy rakhna surakshit hai.</div></div>
+      <div class="card mt12">${!fsOK() ? '<div class="small" style="color:var(--red)">Ye sirf computer ke Chrome / Edge me chalta hai (phone me nahi).</div>' : `<div class="row between"><div><div class="bold">📁 ${h ? esc(h.name) : 'Folder chuna nahi gaya'}</div><div class="small muted">${last ? 'Aakhri backup: ' + new Date(last).toLocaleString() : 'Abhi tak koi auto backup nahi'}</div></div></div>
+        <div class="col gap8 mt12"><button class="btn grow" id="ab-pick">${h ? 'Folder badlein' : 'Folder chunein (D: ya E:)'}</button>${h ? '<button class="btn sec grow" id="ab-now">Abhi backup lein</button><button class="btn sec grow" id="ab-off">Auto backup band karein</button>' : ''}</div>
+        <div class="xs muted" style="margin-top:10px">Folder chunne ke baad app khula rahe to roz apne aap ek file banegi: sone-backup-TAREEKH.json (pichhle 45 din ki rakhi jati hain). Computer restart ke baad Chrome ek baar permission poochhta hai: neeche ka neela button dabayein.</div>`}</div></div>`, {});
+    const pick = $('#ab-pick', sh.el); if (pick) pick.onclick = async () => {
+      try { const d = await window.showDirectoryPicker({ id: 'sone-backup', mode: 'readwrite' }); await idbSet('dir', d); const r = await autoBackupRun(true); sh.close(); toast(r.ok ? 'Backup ho gaya ✓ ' + d.name + '/' + r.name : 'Folder save hua', 'ok'); bkPill(false); }
+      catch (e) { if (e && e.name !== 'AbortError') toast('Folder nahi chuna ja saka: ' + (e.message || e), 'err'); } };
+    const now = $('#ab-now', sh.el); if (now) now.onclick = async () => { now.disabled = true; try { const r = await autoBackupRun(true); sh.close(); toast(r.ok ? 'Backup ho gaya ✓ ' + r.name : 'Permission chahiye', r.ok ? 'ok' : 'err'); } catch (e) { toast('Backup nahi hua: ' + (e.message || e), 'err'); now.disabled = false; } };
+    const off = $('#ab-off', sh.el); if (off) off.onclick = async () => { await idbSet('dir', null); ls.set('sone_auto_bk', 0); bkPill(false); sh.close(); toast('Auto backup band', 'ok'); };
+  }
   async function backupNow(btn) {
-    const T = x => TT_(x), tables = ['menu_items', 'orders', 'pos_sales', 'customers', 'settings'], out = { app: 'sone-restaurant', exported_at: new Date().toISOString(), tables: {} };
+    const T = x => TT_(x);
     if (btn) btn.disabled = true; toast(T('Backup ban raha hai…'));
     try {
-      for (const t of tables) {
-        let all = [], from = 0;
-        for (;;) { const { data, error } = await sb.from(t).select('*').range(from, from + 999); if (error) throw new Error(t + ': ' + error.message); all = all.concat(data || []); if (!data || data.length < 1000) break; from += 1000; }
-        out.tables[t] = all;
-      }
-      try { const { data } = await sb.from('staff').select('id,name,role,active,phone,created_at'); out.tables.staff = data || []; } catch (e) {}
+      const out = await buildBackup();
       const blob = new Blob([JSON.stringify(out)], { type: 'application/json' }), u = URL.createObjectURL(blob), a = document.createElement('a');
       a.href = u; a.download = 'sone-backup-' + dayStr() + '.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 8000);
       ls.set('sone_last_backup', new Date().toISOString()); toast(T('Backup download ho gaya ✓'), 'ok'); if (Owner.tab === 'more') renderMore();
@@ -2659,6 +2717,9 @@ window.SONE_CONFIG = {
     ["Photo download ho gayi — WhatsApp me chat khol kar paste/attach karein", "फ़ोटो डाउनलोड हो गई — व्हाट्सऐप चैट में पेस्ट/अटैच करें", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat", "Photo downloaded — paste/attach it in the WhatsApp chat"],
     ["Photo download ho gayi ✓", "फ़ोटो डाउनलोड हो गई ✓", "Photo downloaded ✓", "Photo downloaded ✓", "Photo downloaded ✓", "Photo downloaded ✓", "Photo downloaded ✓", "Photo downloaded ✓"]
   ]);
+  window.SONE_X = (window.SONE_X || []).concat([
+    ["Order ka udhaar", "ऑर्डर का उधार", "Udhaar from orders", "Udhaar from orders", "Udhaar from orders", "Udhaar from orders", "Udhaar from orders", "Udhaar from orders"]
+  ]);
   const rcvMissing = e => !!e && (e.code === '42P01' || e.code === 'PGRST205' || /udhaar_payments/i.test(e.message || ''));
   window.getUdhaarPayments = async function (from, to, limit) {
     try {
@@ -2716,14 +2777,57 @@ window.SONE_CONFIG = {
       } catch (err) { toast('Save nahi hua: ' + (err.message || err), 'err'); btn.disabled = false; }
     };
   };
+  /* ---------- ORDER ka udhaar: orders me hi rehta hai (POS bill nahi). Purane (POS bill wale) order dobara nahi ginte ---------- */
+  window.orderDues = async function (posRows) {
+    const { data, error } = await sb.from('orders').select('*').ilike('note', '%[उधार%').neq('status', 'cancelled').order('created_at', { ascending: false }).limit(500);
+    if (error) return [];
+    const linked = new Set((posRows || []).map(r => (String(((r.items || [])[0] || {}).name || '').match(/^ऑर्डर #(\S+)/) || [])[1]).filter(Boolean).map(String));
+    return (data || []).filter(o => !linked.has(String(o.order_no))).map(o => { const m = String(o.note || '').match(/\[उधार ₹([\d.]+)\]/), nm = String(o.note || '').match(/\[नाम: ([^\]]*)\]/);
+      return { order: o, amt: m ? Number(m[1]) : 0, name: (nm ? nm[1] : '') || (/^Table\s/i.test(o.customer_name || '') ? '' : o.customer_name || '') }; }).filter(d => d.amt > 0);
+  };
+  window.cleanNote = n => String(n || '').replace(/\s*\[(?:उधार ₹[\d.]+|नाम: [^\]]*)\]/g, '').trim();
+  window.receiveOrderDue = function (d, done) {
+    const o = d.order, due = Math.round(d.amt * 100) / 100, st = { mode: 'cash' };
+    const sh = sheet(`<div class="sh-head"><h3>💰 <span>Udhaar mila</span></h3><button class="iconbtn" data-close>✕</button></div>
+      <div class="sh-body"><div class="card"><div class="small muted">${esc(d.name || 'Naam nahi')} · Order #${esc(o.order_no)}</div>
+      <div class="row between mt8" style="font-size:18px"><span class="muted">Baaki udhaar</span><b>${money(due)}</b></div>
+      <div class="seg mt12"><button data-pm="cash" class="active">💵 <span>Cash</span></button><button data-pm="online">📱 <span>Online/UPI</span></button></div>
+      <label class="field" style="margin:12px 0 0"><span>Kitna mila (₹)</span><input class="inp" id="rv-amt" type="number" inputmode="decimal" value="${due}"></label>
+      <div class="small muted mt8" id="rv-left"></div></div></div>
+      <div class="sh-foot"><button class="btn green block" id="rv-save">Jama karein</button></div>`, {});
+    const inp = $('#rv-amt', sh.el), amt = () => Math.round(Math.min(due, Math.max(0, parseFloat(inp.value) || 0)) * 100) / 100;
+    const left = () => { const l = Math.round((due - amt()) * 100) / 100; $('#rv-left', sh.el).textContent = l > 0 ? 'Baaki rahega: ' + money(l) : 'Poora udhaar clear ho jayega ✓'; };
+    inp.oninput = left; left();
+    $$('[data-pm]', sh.el).forEach(b => b.onclick = () => { st.mode = b.dataset.pm; $$('[data-pm]', sh.el).forEach(x => x.classList.toggle('active', x === b)); });
+    $('#rv-save', sh.el).onclick = async e => {
+      const a = amt(); if (!(a > 0)) return toast('Rakam daalein', 'err');
+      const rest = Math.round((due - a) * 100) / 100, mode = st.mode, btn = e.currentTarget; btn.disabled = true;
+      try {
+        const p = window.ordPay(o), r2 = v => Math.round(v * 100) / 100, nm = d.name ? ' [नाम: ' + d.name.replace(/[\[\]]/g, '') + ']' : '';
+        const base = window.cleanNote(o.note), patch = { cash_amount: r2(p.c + (mode === 'cash' ? a : 0)), online_amount: r2(p.u + (mode === 'online' ? a : 0)) };
+        patch.note = (base ? base + ' ' : '') + (rest > 0.01 ? '[उधार ₹' + rest + ']' + nm : '') || null; if (patch.note) patch.note = patch.note.trim();
+        if (rest <= 0.01 && patch.cash_amount + patch.online_amount >= (Number(o.total) || 0) - 0.01) patch.payment_status = 'paid';
+        await window.Staff.update(o, patch);
+        try { await sb.from('udhaar_payments').insert({ sale_id: 'order:' + o.id, bill_no: o.order_no, bill_date: dayStr(new Date(o.created_at)), customer_name: d.name || null, amount: a, mode, paid_on: dayStr() }); } catch (_) {}
+        sh.close(); toast(`${money(a)} ${mode === 'online' ? 'Online/UPI' : 'Cash'} me mila ✓` + (rest > 0.01 ? ` · ${money(rest)} baaki` : ' · udhaar clear'), 'ok');
+        if (done) done(); if (window.Owner && Owner.refreshHome) Owner.refreshHome();
+      } catch (err) { toast('Save nahi hua: ' + (err.message || err), 'err'); btn.disabled = false; }
+    };
+  };
   async function udhaarSheet() {
     const sh = sheet(`<div class="sh-head"><h3>Udhaar baaki</h3><button class="btn sm" id="u-add" style="margin-left:auto;margin-right:8px">＋ उधार जोड़ें</button><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="u-body"><div class="spin"></div></div>`, { full: true });
     async function draw() {
       const { data, error } = await sb.from('pos_sales').select('*').gt('udhaar', 0).is('deleted_at', null).order('created_at', { ascending: false }); const body = $('#u-body', sh.el);
       if (error) return body.innerHTML = '<div class="empty">' + esc(error.message) + '</div>';
-      if (!data.length) { body.innerHTML = '<div class="empty"><div class="big">🎉</div>Koi udhaar baaki nahi</div>'; return rcvHistory(body); }
-      const tot = data.reduce((a, r) => a + Number(r.udhaar), 0);
+      const od = await window.orderDues(data);
+      if (!data.length && !od.length) { body.innerHTML = '<div class="empty"><div class="big">🎉</div>Koi udhaar baaki nahi</div>'; return rcvHistory(body); }
+      const tot = data.reduce((a, r) => a + Number(r.udhaar), 0) + od.reduce((a, d) => a + d.amt, 0);
       body.innerHTML = `<div class="card"><div class="small muted">Kul baaki</div><div style="font-size:28px;font-weight:700;color:var(--red)">${money(tot)}</div></div><div class="list">${data.map(r => `<div class="li"><div class="grow"><div class="t">${esc(r.customer_name || 'Naam nahi')}</div><div class="s">Bill #${r.bill_no} · ${r.bill_date}${(r.items || []).length ? ' · ' + esc((r.items || []).map(i => i.name).join(', ').slice(0, 40)) : ''}</div></div><b>${money(r.udhaar)}</b><button class="btn sm green" data-rcv="${r.id}">Mil gaya</button><button class="iconbtn" data-udel="${r.id}" title="हटाएँ" style="color:var(--red)">🗑</button></div>`).join('')}</div>`;
+      if (od.length) {
+        body.insertAdjacentHTML('beforeend', `<div class="section-h">${TT_('Order ka udhaar')}</div><div class="list">${od.map(d => `<div class="li"><div class="grow"><div class="t">${esc(d.name || 'Naam nahi')}</div><div class="s">Order #${esc(d.order.order_no)} · ${esc(dayStr(new Date(d.order.created_at)))}</div></div><b>${money(d.amt)}</b><button class="btn sm green" data-ord-rcv="${d.order.id}">मिल गया</button><button class="btn sm sec" data-ord-del="${d.order.id}">✕</button></div>`).join('')}</div>`);
+        $$('[data-ord-rcv]', body).forEach(b => b.onclick = () => window.receiveOrderDue(od.find(x => String(x.order.id) === b.dataset.ordRcv), draw));
+        $$('[data-ord-del]', body).forEach(b => b.onclick = async () => { const d = od.find(x => String(x.order.id) === b.dataset.ordDel); if (!await confirmBox(`${esc(d.name || 'Naam nahi')} का ${money(d.amt)} उधार हटाएँ? (गलती से जोड़ा हो तो)`, 'हाँ, हटाएँ', true)) return; await window.undoOrderUdhaar(d.order); draw(); });
+      }
       $$('[data-udel]', body).forEach(b => b.onclick = async () => { const r = data.find(x => x.id == b.dataset.udel); if (!await confirmBox(`${esc(r.customer_name || 'Naam nahi')} का ${money(r.udhaar)} उधार हटाएँ? (गलती से जोड़ा हो तो)`, 'हाँ, हटाएँ', true)) return;
         try { await window.undoUdhaarBill(r); toast('उधार हटा दिया ✓', 'ok'); draw(); } catch (e) { toast('हटाया नहीं जा सका: ' + (e.message || e), 'err'); } });
       $$('[data-rcv]', body).forEach(b => b.onclick = () => { const r = data.find(x => x.id == b.dataset.rcv); window.receiveUdhaar(r, draw); });
