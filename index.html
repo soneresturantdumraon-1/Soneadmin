@@ -1981,6 +1981,7 @@ window.SONE_CONFIG = {
   const qrNote = b => tt('Kisi bhi UPI app se');
   const qrWeb = () => tt('Hamari website se judein');
   const rOn = k => String(((window.Owner && window.Owner.SET) || {})[k]) !== 'false';   /* bill par kya chhapna hai: Settings > Bill */
+  const gz0 = () => { const S = (window.Owner && window.Owner.SET) || {}; return String(S.rcpt_gst0) === 'true' && !(Number(S.gst_pct) > 0); };   /* bill par sirf dikhane ke liye 'GST 0%' line */
   function qrBlock(b) {
     const lk = qrLink(b); if (!lk) return '';
     try { return `<div style="text-align:center;margin-top:8px;border-top:1px dashed #000;padding-top:6px"><div style="font-weight:700;font-size:12px">${qrCaption(b)}</div>${SoneQR.svg(lk, 130)}<div style="font-size:10px">${qrNote(b)}</div></div>`; } catch (e) { return ''; }
@@ -2010,7 +2011,7 @@ window.SONE_CONFIG = {
       <table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:12.5px"><tr style="border-top:1px dashed #000;border-bottom:1px dashed #000"><th align="left" style="padding:3px 0">${tt('Item')}</th><th align="center">${tt('Qty')}</th><th align="right">${tt('Rate')}</th><th align="right">${tt('Amt')}</th></tr>
         ${(b.items || []).map(i => `<tr><td style="padding:3px 2px 3px 0">${esc(i.name)}</td><td align="center">${i.qty}</td><td align="right">${i.price}</td><td align="right">${i.total}</td></tr>`).join('')}</table>
       <div style="border-top:1px dashed #000;margin-top:4px;padding-top:4px">${row(tt('Total Qty') + ': ' + qty, '')}${row(tt('Subtotal'), money(sub))}${disc ? row(tt('Discount'), '- ' + money(disc)) : ''}
-        ${gp ? row(tt('Incl. CGST') + ' ' + gp / 2 + '%', money(tax / 2), 'font-size:11px') + row(tt('Incl. SGST') + ' ' + gp / 2 + '%', money(tax / 2), 'font-size:11px') : ''}</div>
+        ${gp ? row(tt('Incl. CGST') + ' ' + gp / 2 + '%', money(tax / 2), 'font-size:11px') + row(tt('Incl. SGST') + ' ' + gp / 2 + '%', money(tax / 2), 'font-size:11px') : (gz0() ? row('GST 0%', money(0), 'font-size:11px') : '')}</div>
       <div style="display:flex;justify-content:space-between;font-size:17px;font-weight:800;border-top:1px solid #000;border-bottom:1px solid #000;margin:6px 0;padding:4px 0"><span>${tt('GRAND TOTAL')}</span><span>${money(pay)}</span></div>
       ${Number(b.cash) > 0 ? row(tt('Paid - Cash'), money(b.cash)) : ''}${Number(b.online) ? row(tt('Paid - Online/UPI'), money(b.online)) : ''}${Number(b.cash) < 0 ? row(tt('Change returned - Cash'), money(-b.cash)) : ''}${Number(b.udhaar) ? row('<b>' + tt('Baaki (Udhaar)') + '</b>', '<b>' + money(b.udhaar) + '</b>') : ''}
       ${qrBlock(b)}
@@ -2018,7 +2019,7 @@ window.SONE_CONFIG = {
   }
   function billText(b) {
     const pay = Math.max(0, Number(b.subtotal) - (Number(b.discount) || 0));
-    return `*${C.RESTAURANT.toUpperCase()}*\n${C.ADDRESS}\n${tt('Bill No')} #${b.bill_no} | ${fD(new Date(b.created_at || Date.now()))}\n--------------\n` + (b.items || []).map(i => `${i.name} x${i.qty} = ${money(i.total)}`).join('\n') + `\n--------------\n` + (Number(b.discount) ? `${tt('Discount')}: -${money(b.discount)}\n` : '') + `*${tt('GRAND TOTAL')}: ${money(pay)}*\n` + (Number(b.udhaar) ? `${tt('Baaki (Udhaar)')}: ${money(b.udhaar)}\n` : '') + `\n${tt('Dhanyavaad! Phir aaiyega')} 🙏${rOn('rcpt_web') ? '\n🌐 https://sonerestaurantdumraon.in/' : ''}`;
+    return `*${C.RESTAURANT.toUpperCase()}*\n${C.ADDRESS}\n${tt('Bill No')} #${b.bill_no} | ${fD(new Date(b.created_at || Date.now()))}\n--------------\n` + (b.items || []).map(i => `${i.name} x${i.qty} = ${money(i.total)}`).join('\n') + `\n--------------\n` + (Number(b.discount) ? `${tt('Discount')}: -${money(b.discount)}\n` : '') + (gz0() ? 'GST 0%: ' + money(0) + '\n' : '') + `*${tt('GRAND TOTAL')}: ${money(pay)}*\n` + (Number(b.udhaar) ? `${tt('Baaki (Udhaar)')}: ${money(b.udhaar)}\n` : '') + `\n${tt('Dhanyavaad! Phir aaiyega')} 🙏${rOn('rcpt_web') ? '\n🌐 https://sonerestaurantdumraon.in/' : ''}`;
   }
   async function billImage(b) {
     const SET = Owner.SET || {}, W = (window.ls.get('sone_billw', 330) || 330), P = 16, S = 2, F = (z, w) => `${w || 400} ${z}px ${FF}`, ops = [], mc = document.createElement('canvas').getContext('2d');
@@ -2045,6 +2046,7 @@ window.SONE_CONFIG = {
     });
     rule(true); const qty = (b.items || []).reduce((a, i) => a + Number(i.qty), 0); line(13, 400, tt('Total Qty') + ': ' + qty); line(13, 400, tt('Subtotal'), m$(sub)); if (disc) line(13, 400, tt('Discount'), '- ' + m$(disc));
     if (gp) { line(11, 400, tt('Incl. CGST') + ' ' + gp / 2 + '%', m$(tax / 2)); line(11, 400, tt('Incl. SGST') + ' ' + gp / 2 + '%', m$(tax / 2)); }
+    if (!gp && gz0()) line(11, 400, 'GST 0%', m$(0));
     y += 2; rule(false, 1.5); line(19, 800, tt('GRAND TOTAL'), m$(pay)); rule(false, 1.5);
     if (Number(b.cash) > 0) line(13, 400, tt('Paid - Cash'), m$(b.cash)); if (Number(b.online)) line(13, 400, tt('Paid - Online/UPI'), m$(b.online)); if (Number(b.cash) < 0) line(13, 400, tt('Change returned - Cash'), m$(-b.cash)); if (Number(b.udhaar)) line(13, 700, tt('Baaki (Udhaar)'), m$(b.udhaar));
     { const qlk = qrLink(b); if (qlk) { y += 2; rule(true); line(12, 700, qrCaption(b), null, 'center'); try { const q = SoneQR.make(qlk), sz = Math.min(W - 2 * P - 20, 180), cd = Math.max(1, Math.floor(sz * S / (q.n + 8))), tot = cd * (q.n + 8) / S, yy = y; ops.push(c => SoneQR.draw(c, qlk, (W - tot) / 2, yy, sz, S)); y += tot + 4; line(10, 400, qrNote(b), null, 'center'); } catch (e) {} } }
@@ -2063,10 +2065,12 @@ window.SONE_CONFIG = {
   }
   function billView(b) {
     const sh = sheet(`<div class="sh-head"><h3>${b._due ? tt('Bill (payment baaki)') : 'Bill #' + b.bill_no}</h3><button class="iconbtn" data-close>✕</button></div>
-      <div class="sh-body"><div style="background:#fff;border-radius:12px;margin:0 16px;overflow:auto;box-shadow:var(--shadow)">${receipt(b)}</div>
+      <div class="sh-body"><div class="list" style="margin:0 16px 10px"><div class="li"><div class="grow"><div class="t">GST 0% bill par dikhayein</div><div class="s">Sirf dikhane ke liye · rakam nahi badalti · kabhi bhi band kar sakte hain</div></div><label class="sw"><input type="checkbox" id="bv-g0" ${String((Owner.SET || {}).rcpt_gst0) === 'true' ? 'checked' : ''}><i></i></label></div></div>
+      <div id="bv-rc" style="background:#fff;border-radius:12px;margin:0 16px;overflow:auto;box-shadow:var(--shadow)">${receipt(b)}</div>
       <div class="card mt12"><label class="field" style="margin:0"><span>Customer ka WhatsApp number (optional)</span><input class="inp" id="bv-ph" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digit mobile" value="${esc(b._phone || '')}"></label></div></div>
       <div class="sh-foot">${b._order && b._order.payment_status !== 'paid' ? '<div class="row gap8 mb8"><button class="btn green grow" id="bv-cash">💵 Cash mila ✓</button><button class="btn blue grow" id="bv-upi">📲 UPI mila ✓</button></div>' + (/\[उधार ₹/.test(b._order.note || '') ? '' : '<button class="btn sec block mb8" id="bv-dues">💳 बकाया (उधार)</button>') : ''}<div class="row gap8"><button class="btn green grow" id="bv-wa">📷 WhatsApp (photo)</button><button class="btn sec grow" id="bv-pr">🖨 Print / PDF</button></div><button class="btn sec sm block mt8" id="bv-tx">Sirf text mein bhejein</button>${b.id && !b._order && !b._prov ? '<button class="btn sec sm block mt8" id="bv-ed">✏️ बिल बदलें</button>' : ''}</div>`, { full: true });
     const ph = () => $('#bv-ph', sh.el).value.replace(/\D/g, '').slice(-10);
+    { const g0 = $('#bv-g0', sh.el); g0.onchange = async () => { const ok = await Owner.saveSettings({ rcpt_gst0: g0.checked }); if (!ok) { g0.checked = !g0.checked; return; } $('#bv-rc', sh.el).innerHTML = receipt(b); toast(g0.checked ? 'GST 0% bill par jud gaya ✓' : 'GST 0% hata diya', 'ok'); }; }
     $('#bv-pr', sh.el).onclick = () => Staff.printHTML(receipt(b));
     { const ed = $('#bv-ed', sh.el); if (ed) ed.onclick = () => { sh.close(); editSaved(b); }; }
     { const bd = $('#bv-dues', sh.el); if (bd) bd.onclick = () => window.addUdhaar({ order: b._order, done: () => { sh.close(); window.orderBill(b._order); } }); }
@@ -3454,12 +3458,14 @@ window.billSizeSheet=function(){
    +((window.Owner&&Owner.saveSettings)?'<div class="list mt12"><div class="li"><div class="grow t">'+TT_('Bill par waiter ka naam dikhayein')+'</div><label class="sw"><input type="checkbox" id="bw-sw" '+(String((Owner.SET||{}).bill_waiter_name)!=='false'?'checked':'')+'><i></i></label></div></div>':'')
    +((window.Owner&&Owner.saveSettings)?'<div class="list mt12"><div class="li"><div class="grow"><div class="t">'+TT_('Waiter app mein bill / receipt dikhayein')+'</div><div class="s">'+TT_('Off rakhne par waiter ko Bill button nahi dikhega')+'</div></div><label class="sw"><input type="checkbox" id="wb-sw" '+(String((Owner.SET||{}).waiter_bill)==='true'?'checked':'')+'><i></i></label></div></div>':'')
    +((window.Owner&&Owner.saveSettings)?'<div class="list mt12"><div class="li"><div class="grow"><div class="t">'+TT_('Bill par website link + logo dikhayein')+'</div><div class="s">'+TT_('Off rakhne par bill par website nahi chhapegi')+'</div></div><label class="sw"><input type="checkbox" id="rw-sw" '+(String((Owner.SET||{}).rcpt_web)!=='false'?'checked':'')+'><i></i></label></div></div>':'')
+   +((window.Owner&&Owner.saveSettings)?'<div class="list mt12"><div class="li"><div class="grow"><div class="t">'+TT_('Bill par GST 0% dikhayein')+'</div><div class="s">'+TT_('Sirf dikhane ke liye, rakam nahi badalti. GST % set ho to ye line nahi aati.')+'</div></div><label class="sw"><input type="checkbox" id="rg-sw" '+(String((Owner.SET||{}).rcpt_gst0)==='true'?'checked':'')+'><i></i></label></div></div>':'')
    +((window.Owner&&Owner.saveSettings)?'<div class="list mt12"><div class="li"><div class="grow"><div class="t">'+TT_('Bill par "Aapko kaisa laga?" (feedback) dikhayein')+'</div><div class="s">'+TT_('Off rakhne par Excellent / Good / Average / Poor wala hissa nahi chhapega')+'</div></div><label class="sw"><input type="checkbox" id="rf-sw" '+(String((Owner.SET||{}).rcpt_fb)!=='false'?'checked':'')+'><i></i></label></div></div>':'')
    +'</div>';
   var sh=sheet(h,{});
   var wbs=sh.el.querySelector('#wb-sw'); if(wbs) wbs.onchange=async function(){var ok=await Owner.saveSettings({waiter_bill:wbs.checked}); if(!ok) wbs.checked=!wbs.checked; else toast(TT_(wbs.checked?'Waiter app mein bill ON ho gaya ✓':'Waiter app mein bill OFF ho gaya'),'ok');};
   var ws=sh.el.querySelector('#bw-sw'); if(ws) ws.onchange=async function(){var ok=await Owner.saveSettings({bill_waiter_name:ws.checked}); if(!ok) ws.checked=!ws.checked; else toast(TT_('Save ho gaya ✓'),'ok');};
   var rws=sh.el.querySelector('#rw-sw'); if(rws) rws.onchange=async function(){var ok=await Owner.saveSettings({rcpt_web:rws.checked}); if(!ok) rws.checked=!rws.checked; else toast(TT_('Save ho gaya. Ab naya bill print karke dekhein.'),'ok');};
+  var rgs=sh.el.querySelector('#rg-sw'); if(rgs) rgs.onchange=async function(){var ok=await Owner.saveSettings({rcpt_gst0:rgs.checked}); if(!ok) rgs.checked=!rgs.checked; else toast(TT_('Save ho gaya. Ab naya bill print karke dekhein.'),'ok');};
   var rfs=sh.el.querySelector('#rf-sw'); if(rfs) rfs.onchange=async function(){var ok=await Owner.saveSettings({rcpt_fb:rfs.checked}); if(!ok) rfs.checked=!rfs.checked; else toast(TT_('Save ho gaya. Ab naya bill print karke dekhein.'),'ok');};
   var qs=sh.el.querySelector('#bq-sw'); if(qs) qs.onchange=function(){ls.set('sone_billqr',qs.checked);};
   sh.el.addEventListener('click',function(e){var b=e.target.closest('[data-w]');if(!b)return;ls.set('sone_billw',+b.dataset.w);toast(TT_('Save ho gaya. Ab naya bill print karke dekhein.'),'ok');sh.el.querySelectorAll('[data-w]').forEach(function(x){x.lastChild.textContent=x===b?'✓':'';});});
