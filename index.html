@@ -1526,13 +1526,14 @@ window.SONE_CONFIG = {
   }
   function editSaved(b) {
     const st = { items: (b.items || []).map(i => ({ name: String(i.name || ''), price: Number(i.price) || 0, qty: Number(i.qty) || 1 })),
-      disc: Number(b.discount) || 0, cash: Number(b.cash) || 0, online: Number(b.online) || 0, name: b.customer_name || '', table: b.table_no || '', date: b.bill_date || '' };
+      disc: Number(b.discount) || 0, cash: Number(b.cash) || 0, online: Number(b.online) || 0, name: b.customer_name || '', table: b.table_no || '', date: b.bill_date || '', waiter: b.waiter_id || '', waiterName: b.waiter_name || '' };
     const sub = () => st.items.reduce((a, l) => a + l.price * l.qty, 0), pay = () => Math.max(0, sub() - st.disc);
     const ud = () => Math.max(0, Math.round((pay() - st.cash - st.online) * 100) / 100);
     let auto = st.cash + st.online >= pay() - 0.01;
     const sh = sheet(`<div class="sh-head"><h3><span>✏️ बिल बदलें</span> #${esc(b.bill_no)}</h3><button class="iconbtn" data-close>✕</button></div><div class="sh-body" id="eb"></div>
       <div class="sh-foot"><button class="btn block" id="eb-save">बदलाव सहेजें</button></div>`, { full: true });
     const body = $('#eb', sh.el);
+    if (!WL) loadWaiters().then(() => { if (body.isConnected) render(); });
     function totals() {
       if (auto) { st.cash = Math.max(0, pay() - st.online); const c = $('#eb-cash', body); if (c && document.activeElement !== c) c.value = st.cash || ''; }
       $('#eb-tot', body).innerHTML = `<div class="row between"><span class="muted">उप-कुल</span><b>${money(sub())}</b></div>${st.disc ? `<div class="row between"><span class="muted">छूट</span><b>− ${money(st.disc)}</b></div>` : ''}
@@ -1545,6 +1546,7 @@ window.SONE_CONFIG = {
         <button class="iconbtn" data-rm="${i}" style="width:36px;height:36px;color:var(--red);align-self:flex-end">✕</button></div></div>`).join('')}
         <div class="pad"><button class="btn sec block" id="eb-add">＋ नया आइटम जोड़ें</button></div>
         <div class="card mt12"><div class="row gap8"><label class="field grow" style="margin:0"><span>ग्राहक का नाम${PEN()}</span><input class="inp" id="eb-name" value="${esc(st.name)}"></label><label class="field" style="margin:0;width:90px"><span>टेबल${PEN()}</span><input class="inp" id="eb-table" value="${esc(st.table)}"></label></div>
+        <label class="field" style="margin:12px 0 0"><span>वेटर (टेबल का)</span><select class="inp" id="eb-waiter"><option value="">— कोई नहीं —</option>${(WL || []).map(w => `<option value="${esc(w.id)}" data-n="${esc(w.name)}" ${String(st.waiter) === String(w.id) ? 'selected' : ''}>${esc(w.name)}${w.role === 'owner' ? ' (Owner)' : ''}</option>`).join('')}${st.waiter && !(WL || []).some(w => String(w.id) === String(st.waiter)) ? `<option value="${esc(st.waiter)}" data-n="${esc(st.waiterName)}" selected>${esc(st.waiterName || '?')}</option>` : ''}</select></label>
         <label class="field" style="margin:12px 0 0"><span>तारीख${PEN()}</span><input class="inp" id="eb-date" type="date" value="${esc(st.date)}" max="${dayStr()}"></label>
         <div class="row gap8 mt12"><label class="field grow" style="margin:0"><span>छूट (₹)${PEN()}</span><input class="inp" id="eb-disc" type="number" inputmode="decimal" value="${st.disc || ''}"></label>
         <label class="field grow" style="margin:0"><span>नकद (₹)${PEN()}</span><input class="inp" id="eb-cash" type="number" inputmode="decimal" value="${st.cash || ''}"></label>
@@ -1552,7 +1554,7 @@ window.SONE_CONFIG = {
       $$('[data-f]', body).forEach(inp => inp.oninput = () => { const l = st.items[inp.dataset.i], f = inp.dataset.f; l[f] = f === 'name' ? inp.value : (f === 'qty' ? parseInt(inp.value, 10) || 0 : parseFloat(inp.value) || 0); totals(); });
       $$('[data-rm]', body).forEach(x => x.onclick = () => { st.items.splice(x.dataset.rm, 1); render(); });
       $('#eb-add', body).onclick = () => { st.items.push({ name: '', price: 0, qty: 1 }); render(); };
-      $('#eb-name', body).oninput = e => { st.name = e.target.value; }; $('#eb-table', body).oninput = e => { st.table = e.target.value; }; $('#eb-date', body).oninput = e => { st.date = e.target.value; };
+      $('#eb-name', body).oninput = e => { st.name = e.target.value; }; $('#eb-table', body).oninput = e => { st.table = e.target.value; }; $('#eb-waiter', body).onchange = e => { st.waiter = e.target.value; st.waiterName = e.target.value && e.target.selectedOptions[0] ? e.target.selectedOptions[0].dataset.n || '' : ''; }; $('#eb-date', body).oninput = e => { st.date = e.target.value; };
       $('#eb-disc', body).oninput = e => { st.disc = Math.max(0, parseFloat(e.target.value) || 0); totals(); };
       $('#eb-cash', body).oninput = e => { auto = false; st.cash = Math.max(0, parseFloat(e.target.value) || 0); totals(); };
       $('#eb-online', body).oninput = e => { st.online = Math.max(0, parseFloat(e.target.value) || 0); totals(); };
@@ -1568,6 +1570,7 @@ window.SONE_CONFIG = {
       const btn = $('#eb-save', sh.el);   /* await ke baad e.currentTarget null ho jata hai */ btn.disabled = true;
       try {
         const patch = { items: st.items.map(l => ({ name: String(l.name).trim(), price: l.price, qty: l.qty, total: l.price * l.qty })), subtotal: sub(), discount: st.disc, cash: sCash, online: st.online, udhaar: ud(), customer_name: st.name.trim() || null, table_no: st.table.trim() || null };
+        if ((st.waiter || '') !== (b.waiter_id || '')) { patch.waiter_id = st.waiter || null; patch.waiter_name = st.waiter ? (st.waiterName || null) : null; }
         if (st.date && st.date !== b.bill_date) {
           if (!/^\d{4}-\d{2}-\d{2}$/.test(st.date) || st.date > dayStr()) { btn.disabled = false; return toast('सही तारीख चुनें', 'err'); }
           const old = new Date(b.created_at || Date.now()), [yy, mm, dd] = st.date.split('-').map(Number);
