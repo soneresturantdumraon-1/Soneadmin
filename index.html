@@ -1482,7 +1482,7 @@ window.SONE_CONFIG = {
     nm.oninput = () => {
       const q = nm.value.trim().toLowerCase(), ex = q && MENU.find(m => m.available && !hiddenVariant(m) && m.name.toLowerCase() === q);
       if (ex) pr.value = ex.price;
-      const l = q ? window.menuFind(MENU.filter(m => m.available), q, 40) : [];
+      const l = q ? window.menuFind(MENU.filter(m => m.available), q, 8) : [];
       $('#pa-sug').innerHTML = l.length && !ex ? `<div class="list" style="margin:0 0 10px">${l.map(m => `<button class="li" data-s="${m.id}" style="width:100%;text-align:left"><span class="grow t">${esc(m.name)}</span><span class="muted">${money(m.price)}</span></button>`).join('')}</div>` : '';
     };
     nm.addEventListener('keydown', e => { if (e.key !== 'Enter') return; const f = $('#pa-sug [data-s]'); if (f) { e.preventDefault(); f.click(); } });   /* Enter = pehla suggestion */
