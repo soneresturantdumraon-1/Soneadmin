@@ -2285,6 +2285,26 @@ window.SONE_CONFIG = {
     const { error } = await sb.from('settings').upsert(rows); if (error) { toast(error.message, 'err'); return false; }
     Object.assign(Owner.SET, obj); return true;
   };
+  /* दूसरे फ़ोन/कंप्यूटर पर बदली सेटिंग यहाँ भी अपने-आप आ जाए: realtime + हर 15 सेकंड + ऐप खुलते/लौटते ही */
+  Owner.syncSettings = async function () {
+    try { const { data, error } = await sb.from('settings').select('*'); if (error || !data) return false;
+      const n = {}; data.forEach(r => n[r.key] = r.value);
+      const norm = o => JSON.stringify(Object.keys(o || {}).sort().map(k => [k, String(o[k])]));
+      if (norm(n) === norm(Owner.SET)) return false;
+      Owner.SET = n;
+      /* चुपचाप: बिलिंग/टाइपिंग/खुली स्क्रीन के बीच कुछ दोबारा नहीं बनाते; सेटिंग सिर्फ़ मेमोरी में बदलती है */
+      const ae = document.activeElement, busy = (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) || document.querySelector('.sheet-wrap');
+      if (!busy) { try { Owner.refreshHome && Owner.refreshHome(); } catch (e) {} }
+      try { window.dispatchEvent(new Event('sone:settings')); } catch (e) {} return true; } catch (e) { return false; }
+  };
+  (function () { let ch = null, tm = 0;
+    const kick = () => { clearTimeout(tm); tm = setTimeout(() => Owner.syncSettings(), 300); };
+    const mk = () => { try { if (ch) sb.removeChannel(ch); ch = sb.channel('settings-sync-' + Math.random().toString(36).slice(2, 7)).on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, kick).subscribe(); } catch (e) {} };
+    setTimeout(() => { mk(); Owner.syncSettings(); }, 3000);
+    setInterval(() => { if (!document.hidden) Owner.syncSettings(); }, 15000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) Owner.syncSettings(); });
+    window.addEventListener('focus', kick); window.addEventListener('online', kick);
+  })();
 
   /* ---------- dashboard ---------- */
 
